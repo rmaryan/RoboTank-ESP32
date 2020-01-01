@@ -1,2 +1,3 @@
 (sym_lib_table
+  (lib (name RoboTank-ESP32-rescue)(type Legacy)(uri ${KIPRJMOD}/RoboTank-ESP32-rescue.lib)(options "")(descr ""))
 )
