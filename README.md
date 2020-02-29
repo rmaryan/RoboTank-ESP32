@@ -2,5 +2,23 @@
 
 This is a source code and schematics for the ESP32-based robot with the 6-servos manipulator.
 
+## Used Components
 
+  * [ESP32 DevBoard](https://www.banggood.com/ESP32-Development-Board-WiFibluetooth-Ultra-Low-Power-Consumption-Dual-Cores-ESP-32-ESP-32S-Board-p-1109512.html?p=M908156347868201609Y)
+  * [Geekcreit DT300 WIFI Double Decker Tank Chassis](https://www.banggood.com/DT300-WIFI-Double-Layer-Decker-Tracked-Model-Robot-Tank-DIY-Kit-Compatible-With-Arduino-UNO-R3-p-1079947.html?p=M908156347868201609Y)
+  * [L298N Dual H Bridge Motor Driver](https://www.banggood.com/Wholesale-L298N-Dual-H-Bridge-Stepper-Motor-Driver-Board-p-42826.html?p=M908156347868201609Y)
+  * [PCA9685 16-Channel 12-bit PWM Extender I2C](https://www.banggood.com/PCA9685-16-Channel-12-bit-PWM-Servo-Motor-Driver-I2C-Module-p-1170343.html?p=M908156347868201609Y)
+  * [6-DOF Robotic Arm](https://www.banggood.com/ROT2U-6DOF-Silver-Aluminium-Robot-Arm-Clamp-Claw-Mount-Kit-With-Servos-p-1118027.html?p=M908156347868201609Y) - please note, we had to replace two of the original MG996R servos with stronger ones (see below)
+  * [SPT Servo SPT5535LV-320 35KG 320°](https://www.banggood.com/SPT-Servo-SPT5535LV-320-35KG-Large-Torque-Metal-Gear-Digital-Servo-For-RC-Robot-RC-Robot-Arm-p-1577513.html?p=M908156347868201609Y)
+  * [SPT Servo SPT5525LV-320 25KG 320°](https://www.banggood.com/SPT-Servo-SPT5525LV-320-25KG-Digital-Servo-320-Metal-Gear-Large-Torque-Servo-For-RC-Robot-p-1383203.html?p=M908156347868201609Y)
+  * [Ultrasonic distance sensor HC-SR04 with the servo-mounting cradle](https://www.banggood.com/Wholesale-Geekcreit-Ultrasonic-Module-HC-SR04-Distance-Measuring-Ranging-Transducer-Sensor-DC-5V-2-450cm-p-40313.html?p=M908156347868201609Y) 
+  * [TowerPro SG90 Mini Gear Micro Servo 9g](http://www.banggood.com/TowerPro-SG90-Mini-Gear-Micro-Servo-9g-For-RC-Airplane-Helicopter-p-1009914.html?p=M908156347868201609Y)
+  * [Infrared Obstacle Detectors](https://www.banggood.com/5Pcs-Infrared-Obstacle-Avoidance-Sensor-Smart-Car-Robot-p-951032.html?p=M908156347868201609Y) - 4x
+  * [LED Lights caps](https://www.banggood.com/3mm5mm8mm10mm-Lightcup-5Pcs-For-RC-Car-LED-Lights-p-930752.html?p=M908156347868201609Y)
+  * [WS2812B SMD LED boards](https://www.banggood.com/10Pcs-DC-5V-3MM-x-10MM-WS2812B-SMD-LED-Board-Built-in-IC-WS2812-p-958213.html?p=M908156347868201609Y)
+  * [Flysky 2.4G 6CH FS-iA6B Receiver](https://www.banggood.com/Flysky-2_4G-6CH-FS-iA6B-Receiver-PPM-Output-With-iBus-Port-p-978603.html?p=M908156347868201609Y) - can be used with a RC transmitter like [FlySky FS-i6 2.4G 6CH](https://www.banggood.com/FlySky-FS-i6-2_4G-6CH-AFHDS-RC-Radion-Transmitter-With-FS-iA6B-Receiver-for-RC-FPV-Drone-p-983537.html?p=M908156347868201609Y)
+  * [Battery Management System 2S 7.4V 8A Peak Current 15A for 18650 Lithium Battery](https://www.banggood.com/2S-7_4V-8A-Peak-Current-15A-18650-Lithium-Battery-Protection-Board-With-Over-Charge-Protection-p-1259709.html?p=M908156347868201609Y) - 2x
+  * [18650 Li-Ion Elements](https://www.banggood.com/4Pcs-INR18650-30Q-3000mAh-20A-Discharge-Current-18650-Power-Battery-Unprotected-Button-Top-18650-Battery-For-Flashlights-E-Cig-Tools-p-1067185.html?p=M908156347868201609Y) - 4x, make sure you've got not least than 20A rated max output
+
+## Schematics
 ![Schematics](schematics/RoboTank-ESP32.png)
