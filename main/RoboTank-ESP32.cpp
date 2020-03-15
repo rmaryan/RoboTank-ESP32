@@ -3,6 +3,8 @@
  *
  *  THE ENTRY POINT
  *
+ *  Minimum ESP-IDF version required: 4.0
+ *
  *  Copyright (c) 2020 Maryan Rachynskyy
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,20 +28,30 @@
 #include "esp_spi_flash.h"
 #include "sdkconfig.h"
 
+#include "OTAManager.h"
 #include "pin_mapping.h"
 #include "PWMBoardController.h"
 #include "MotorL298NDriver.h"
+#include "SoundModuleController.h"
 
 extern "C" {
 void app_main();
 }
 
-//MotorL298NDriver* motorDriver;
-
 void app_main()
 {
-	PWMBoardController::init();
+	// Initializing the OTA and web server subsystem
+	OTAManager::init();
 
+	// Hello Sound!
+	SoundModuleController::init();
+	SoundModuleController::playSound(7);
+
+	PWMBoardController::init();
+	while(true)	{
+;
+	}
+/*
 	// the hello world dance
 	MotorL298NDriver::go(160);
 	PWMBoardController::setPinON(14,true);
@@ -53,4 +65,5 @@ void app_main()
 	PWMBoardController::setPinON(15,true);
 	PWMBoardController::setPinON(14,true);
 	vTaskDelay(2000 / portTICK_RATE_MS);
+	*/
 }

@@ -1,4 +1,3 @@
-set(COMPONENT_SRCS "RoboTank-ESP32.cpp")
-set(COMPONENT_ADD_INCLUDEDIRS "")
-
-register_component()
+idf_component_register(SRC_DIRS "."
+                       INCLUDE_DIRS "."
+                       EMBED_TXTFILES webcontent/index.html webcontent/favicon.png)

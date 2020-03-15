@@ -1491,7 +1491,6 @@ NoConn ~ 7700 3200
 NoConn ~ 7700 3300
 NoConn ~ 7700 3500
 NoConn ~ 7700 4000
-NoConn ~ 7700 4100
 NoConn ~ 7700 4200
 NoConn ~ 7700 4300
 NoConn ~ 7700 4400
@@ -1786,21 +1785,13 @@ Wire Wire Line
 Wire Wire Line
 	7850 5050 7850 5250
 Wire Wire Line
-	7750 4850 7750 5150
-Wire Wire Line
-	7750 4850 8000 4850
+	7850 4850 8000 4850
 Wire Wire Line
 	7850 5250 6200 5250
-Wire Wire Line
-	7750 5150 6300 5150
 Wire Wire Line
 	6200 4100 6550 4100
 Wire Wire Line
 	6200 4100 6200 5250
-Wire Wire Line
-	6300 4200 6300 5150
-Wire Wire Line
-	6300 4200 6550 4200
 Wire Wire Line
 	8950 5050 8950 4200
 Wire Wire Line
@@ -1824,4 +1815,9 @@ Wire Wire Line
 NoConn ~ 7700 3400
 NoConn ~ 7700 3000
 NoConn ~ 7700 3100
+Wire Wire Line
+	7850 4850 7850 4100
+Wire Wire Line
+	7850 4100 7700 4100
+NoConn ~ 6550 4200
 $EndSCHEMATC

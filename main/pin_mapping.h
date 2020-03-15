@@ -29,15 +29,15 @@
 /*============*/
 
 // ESP32 pins used to control the sound module (WTV020M01)
-#define PIN_PIN_ESP32_SOUND_P04 GPIO_NUM_13
-#define PIN_PIN_ESP32_SOUND_P05 GPIO_NUM_12
+#define PIN_PIN_ESP32_SOUND_P04_CLK GPIO_NUM_13
+#define PIN_PIN_ESP32_SOUND_P05_DI GPIO_NUM_26
 
 // pins used for I2C connection to the PWM multiplexing board
 #define PIN_PIN_ESP32_PWM_SCL GPIO_NUM_27
 #define PIN_PIN_ESP32_PWM_SDA GPIO_NUM_14
 
 // pin used to connect to the RC receiver port
-#define PIN_PIN_ESP32_RC_REC GPIO_NUM_0 //FIXME
+#define PIN_PIN_ESP32_RC_RX GPIO_NUM_0 //FIXME
 
 // bottom RGB LED controlling pins
 #define PIN_PIN_ESP32_RGB_LEFT GPIO_NUM_0 //FIXME
