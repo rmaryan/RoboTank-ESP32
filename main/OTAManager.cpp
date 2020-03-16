@@ -20,6 +20,7 @@
 #include "OTAManager.h"
 
 #include <sys/param.h>
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
@@ -65,7 +66,6 @@ httpd_uri_t OTAManager::http_status_struct = {
 };
 
 void OTAManager::init() {
-
 	//Initialize NVS
 	esp_err_t ret = nvs_flash_init();
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -73,6 +73,8 @@ void OTAManager::init() {
 		ret = nvs_flash_init();
 	}
 	ESP_ERROR_CHECK(ret);
+
+	esp_log_level_set("wifi", ESP_LOG_NONE);     // disable wifi driver logging
 
 	// Need this task to spin up, see why in task
 	xTaskCreate(systemRebootWrapper, REBOOT_TASK_NAME, 2048, NULL, 5, NULL);
@@ -129,6 +131,7 @@ void OTAManager::initWiFiStation() {
 	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
 
 	ESP_ERROR_CHECK(esp_wifi_start());
+	ESP_LOGI("OTA", "WiFi kicked-off");
 }
 
 void OTAManager::wifi_event_handler(void *arg, esp_event_base_t event_base,
@@ -137,12 +140,16 @@ void OTAManager::wifi_event_handler(void *arg, esp_event_base_t event_base,
 	if(event_base == WIFI_EVENT) {
 		switch (event_id) {
 		case WIFI_EVENT_STA_START:			/**< ESP32 station start */
+			ESP_LOGI("OTA", "WIFI_EVENT_STA_START");
 			esp_wifi_connect();
+			ESP_LOGI("OTA", "Connecting to SSID: %s", CONFIG_STATION_SSID);
 			break;
 
 		case WIFI_EVENT_STA_DISCONNECTED:		/**< ESP32 station disconnected from AP */
+			ESP_LOGI("OTA", "WIFI_EVENT_STA_DISCONNECTED");
 			esp_wifi_connect();
 			xEventGroupClearBits(wifi_event_group, WIFI_STA_DISCONNECTED_BIT);
+			ESP_LOGI("OTA", "Trying to reconnect...");
 			/* Stop the web server */
 			httpStopServer();
 			break;
@@ -150,6 +157,7 @@ void OTAManager::wifi_event_handler(void *arg, esp_event_base_t event_base,
 	} else
 		if(event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
 			/**< ESP32 station got IP from connected AP */
+			ESP_LOGI("OTA", "IP_EVENT_STA_GOT_IP");
 			xEventGroupSetBits(wifi_event_group, WIFI_STA_CONNECTED_BIT);
 			/* Start the web server */
 			httpStartServer();
@@ -158,23 +166,27 @@ void OTAManager::wifi_event_handler(void *arg, esp_event_base_t event_base,
 
 void OTAManager::httpStartServer() {
 	if (server == NULL) {
+		ESP_LOGI("OTA", "Starting HTTP Server...");
 		httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 		config.stack_size = 8192; // (default is 4096)
 
 		// Start the httpd server
 		if (httpd_start(&server, &config) == ESP_OK) {
+			ESP_LOGI("OTA", "Establishing URI Handlers");
 			// Set URI handlers
-
 			httpd_register_uri_handler(server, &http_index_html_struct);
 			httpd_register_uri_handler(server, &http_favicon_png_struct);
 			httpd_register_uri_handler(server, &http_update_struct);
 			httpd_register_uri_handler(server, &http_status_struct);
+		} else {
+			ESP_LOGE("OTA", "HTTP Server start failed");
 		}
 	}
 }
 
 void OTAManager::httpStopServer() {
 	if (server!=NULL) {
+		ESP_LOGI("OTA", "Stopping HTTP Server");
 		httpd_stop(server);
 		server = NULL;
 	}
@@ -183,18 +195,22 @@ void OTAManager::httpStopServer() {
 esp_err_t OTAManager::http_index_html_handler(httpd_req_t *req) {
 	// Clear this every time page is requested
 	flash_status = 0;
+	ESP_LOGI("OTA", "Request received: index.html");
 	httpd_resp_set_type(req, "text/html");
 	httpd_resp_send(req, (const char *)index_html_start, index_html_end - index_html_start);
 	return ESP_OK;
 }
 
 esp_err_t OTAManager::http_favicon_png_handler(httpd_req_t *req) {
+	ESP_LOGI("OTA", "Request received: favicon.png");
 	httpd_resp_set_type(req, "image/png");
 	httpd_resp_send(req, (const char *)favicon_png_start, favicon_png_end - favicon_png_start);
 	return ESP_OK;
 }
 
 esp_err_t OTAManager::http_update_status_handler(httpd_req_t *req) {
+	ESP_LOGI("OTA", "Request received: update status");
+
 	char ledJSON[100];
 
 	sprintf(ledJSON, "{\"status\":%d,\"compile_time\":\"%s\",\"compile_date\":\"%s\"}", flash_status, __TIME__, __DATE__);
@@ -221,6 +237,8 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 	bool is_req_body_started = false;
 	const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
 
+	ESP_LOGI("OTA", "HTTP POST Processing");
+
 	// Unsuccessful Flashing
 	flash_status = -1;
 
@@ -231,6 +249,7 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 				/* Retry receiving if timeout occurred */
 				continue;
 			}
+			ESP_LOGE("OTA", "HTTP POST Receiving data failed");
 			return ESP_FAIL;
 		}
 
@@ -246,17 +265,17 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 			esp_err_t err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_handle);
 			if (err != ESP_OK)
 			{
-				// Error With OTA Begin, Cancelling OTA
+				ESP_LOGE("OTA", "HTTP POST Error With OTA Begin, Cancelling OTA");
 				return ESP_FAIL;
 			}
 			else {
-				// Writing to partition subtype %d at offset 0x%x\r\n", update_partition->subtype, update_partition->address
+				ESP_LOGI("OTA", "HTTP POST Writing to partition subtype %d at offset 0x%x", update_partition->subtype, update_partition->address);
 			}
 
 			// Lets write this first part of data out
 			esp_ota_write(ota_handle, body_start_p, body_part_len);
 		} else {
-			// Write OTA data
+			ESP_LOGI("OTA", "HTTP POST Writing OTA data");
 			esp_ota_write(ota_handle, ota_buff, recv_len);
 
 			content_received += recv_len;
@@ -271,11 +290,12 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 			// This is to let it know it was successful
 			flash_status = 1;
 		} else {
-			// !!! Flashed Error !!!
+			ESP_LOGE("OTA", "HTTP POST Set boot partition error");
 		}
 
 	} else {
-		// OTA End Error
+		ESP_LOGE("OTA", "HTTP POST OTA End Error");
 	}
+	ESP_LOGE("OTA", "HTTP POST flashing succeeded");
 	return ESP_OK;
 }

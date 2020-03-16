@@ -22,6 +22,7 @@
  */
 
 #include <stdio.h>
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -40,6 +41,9 @@ void app_main();
 
 void app_main()
 {
+	ESP_LOGI("ROOT", "Starting the launch sequence...");
+	ESP_LOGI("ROOT", "Version: %s %s", __TIME__, __DATE__);
+
 	// Initializing the OTA and web server subsystem
 	OTAManager::init();
 
