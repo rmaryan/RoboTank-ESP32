@@ -26,7 +26,7 @@ This is a source code and schematics for the ESP32-based robot with the 6-servos
 
 ## ESP IDF Requirements
 
-This project relies on the features introduced in ESP IDF version 4.0. Make sure you use at least this version.
+This project relies on the features introduced in ESP IDF version 4.1. Make sure you use at least this version.
 
 ## Schematics
 ![Schematics](schematics/RoboTank-ESP32.png)
@@ -43,6 +43,5 @@ Tracks are the following:
   * 0004.AD4 - R2D2-ish sound #5
   * 0005.AD4 - R2D2-ish sound #6
   * 0006.AD4 - Vivaldi - Winter
-  * 0007.AD4 - Johann Strauss - The Blue Danube Waltz 
 
 Files were converted from the original MP3's as described here: https://www.buildcircuit.com/how-to-convert-mp3-and-wav-files-to-ad4-format-wtv020sd-tutorial/

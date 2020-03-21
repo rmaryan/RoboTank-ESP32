@@ -35,14 +35,16 @@
 #include "MotorL298NDriver.h"
 #include "SoundModuleController.h"
 
+static const char* LOG_TAG = "ROOT";
+
 extern "C" {
 void app_main();
 }
 
 void app_main()
 {
-	ESP_LOGI("ROOT", "Starting the launch sequence...");
-	ESP_LOGI("ROOT", "Version: %s %s", __TIME__, __DATE__);
+	ESP_LOGI(LOG_TAG, "Starting the launch sequence...");
+	ESP_LOGI(LOG_TAG, "Version: %s %s", __TIME__, __DATE__);
 
 	// Initializing the OTA and web server subsystem
 	OTAManager::init();
@@ -53,7 +55,7 @@ void app_main()
 
 	PWMBoardController::init();
 	while(true)	{
-;
+		vTaskDelay(2000 / portTICK_RATE_MS);
 	}
 /*
 	// the hello world dance

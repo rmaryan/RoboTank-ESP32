@@ -40,9 +40,7 @@ private:
 	static EventGroupHandle_t reboot_event_group;
 	static const int REBOOT_BIT = BIT0;
 
-	static EventGroupHandle_t wifi_event_group;
-	static const int WIFI_STA_CONNECTED_BIT = BIT0;
-	static const int WIFI_STA_DISCONNECTED_BIT = BIT1;
+	static uint8_t s_retry_num;
 
 	static httpd_handle_t server;
 	static int8_t flash_status;
