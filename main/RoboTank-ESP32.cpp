@@ -51,13 +51,15 @@ void app_main()
 
 	// Hello Sound!
 	SoundModuleController::init();
-	SoundModuleController::playSound(7);
+	SoundModuleController::setVolume(7);
+	SoundModuleController::playSound(6);
 
 	PWMBoardController::init();
+
 	while(true)	{
-		vTaskDelay(2000 / portTICK_RATE_MS);
+		vTaskDelay(20000 / portTICK_RATE_MS);
 	}
-/*
+	/*
 	// the hello world dance
 	MotorL298NDriver::go(160);
 	PWMBoardController::setPinON(14,true);
@@ -71,5 +73,5 @@ void app_main()
 	PWMBoardController::setPinON(15,true);
 	PWMBoardController::setPinON(14,true);
 	vTaskDelay(2000 / portTICK_RATE_MS);
-	*/
+	 */
 }

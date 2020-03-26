@@ -31,6 +31,7 @@ private:
 	static const uint16_t VOLUME_MIN = 0xFFF0;
 
 	static void sendCommand(uint16_t command);
+	static void delayMicros(uint32_t us); // Ported from Arduino
 public:
 	// Initialize the sound subsystem
 	static void init();
