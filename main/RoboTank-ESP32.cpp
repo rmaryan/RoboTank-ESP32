@@ -34,6 +34,7 @@
 #include "PWMBoardController.h"
 #include "MotorL298NDriver.h"
 #include "SoundModuleController.h"
+#include "ArmController.h"
 
 static const char* LOG_TAG = "ROOT";
 
@@ -51,13 +52,33 @@ void app_main()
 
 	// Hello Sound!
 	SoundModuleController::init();
-	SoundModuleController::setVolume(7);
-	SoundModuleController::playSound(6);
+	SoundModuleController::setVolume(7); // Max volume
+	SoundModuleController::playSound(3); // The hello sound ID
 
+	// PWM Board
 	PWMBoardController::init();
 
+	// Arm Controller
+	//ArmController::
+	// This is the arm servos calibration hook.
+	// If you uncomment SERVO_CALIBRATION_MODE definition in ArmController.h - the main execution thread is highjacked
+	// Connect to the robot in serial console and send servo position commands as requested. This way you can define edge
+	// and parking positions for the servos.
+#ifdef SERVO_CALIBRATION_MODE
+	ArmController::servoCalibration();
+	// Nothing is executed beyond this step
+#endif
+
 	while(true)	{
-		vTaskDelay(20000 / portTICK_RATE_MS);
+		for(int i=10; i<140; i+=10) {
+			ArmController::moveServo(0, i);
+			vTaskDelay(2000 / portTICK_RATE_MS);
+		}
+		for(int i=140; i>10; i-=10) {
+			ArmController::moveServo(0, i);
+			vTaskDelay(2000 / portTICK_RATE_MS);
+		}
+
 	}
 	/*
 	// the hello world dance

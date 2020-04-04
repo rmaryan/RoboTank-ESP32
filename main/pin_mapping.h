@@ -56,8 +56,8 @@
 
 /* PWM Multiplexer pins (PCA9685 board) */
 /*======================================*/
-#define PIN_PWM_ARM_SERVO0 0 //FIXME
-#define PIN_PWM_ARM_SERVO1 0 //FIXME
+#define PIN_PWM_ARM_SERVO0 7
+#define PIN_PWM_ARM_SERVO1 8
 #define PIN_PWM_ARM_SERVO2 0 //FIXME
 #define PIN_PWM_ARM_SERVO3 0 //FIXME
 #define PIN_PWM_ARM_SERVO4 0 //FIXME

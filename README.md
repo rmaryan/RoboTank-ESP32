@@ -36,12 +36,12 @@ This project relies on the features introduced in ESP IDF version 4.1. Make sure
 Place the files from sdcard folder to the root of the sound module SD card.
 
 Tracks are the following:
-  * 0000.AD4 - R2D2-ish sound #1
-  * 0001.AD4 - R2D2-ish sound #2
-  * 0002.AD4 - R2D2-ish sound #3
-  * 0003.AD4 - R2D2-ish sound #4
-  * 0004.AD4 - R2D2-ish sound #5
-  * 0005.AD4 - R2D2-ish sound #6
+  * 0000.AD4 - Thinking
+  * 0001.AD4 - Working
+  * 0002.AD4 - Talking
+  * 0003.AD4 - Hello
+  * 0004.AD4 - Scared
+  * 0005.AD4 - Be careful
   * 0006.AD4 - Vivaldi - Winter
 
 Files were converted from the original MP3's as described here: https://www.buildcircuit.com/how-to-convert-mp3-and-wav-files-to-ad4-format-wtv020sd-tutorial/
