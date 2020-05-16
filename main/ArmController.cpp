@@ -19,14 +19,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <math.h>
+#include <esp_log.h>
 #include "ArmController.h"
 #include "PWMBoardController.h"
 #include "RoboTankUtils.h"
-
-#define SERVOMIN  100 // this is the 'minimum' pulse length count (out of 4096)
-#define SERVOMAX  500 // this is the 'maximum' pulse length count (out of 4096)
 
 const uint8_t ArmController::SERVO_PWM_PORTS[SERVOS_COUNT] = {
 		PIN_PWM_ARM_SERVO0,
@@ -36,10 +33,49 @@ const uint8_t ArmController::SERVO_PWM_PORTS[SERVOS_COUNT] = {
 		PIN_PWM_ARM_SERVO4,
 		PIN_PWM_ARM_SERVO5
 };
-const uint16_t ArmController::SERVO_MIN_DEG[SERVOS_COUNT] = {0, 0, 0, 0, 0, 0};
-const uint16_t ArmController::SERVO_MAX_DEG[SERVOS_COUNT] = {180, 180, 180, 180, 180, 180};
-const uint16_t ArmController::SERVO_PARK_DEG[SERVOS_COUNT] = {80, 60, 20, 20, 70, 70};
 
+const uint8_t ArmController::SERVO_MIN_DEG[SERVOS_COUNT] = 	 {2,   15,  10,  30,  10,  45};
+const uint8_t ArmController::SERVO_MAX_DEG[SERVOS_COUNT] =   {178, 165, 180, 170, 170, 85};
+const uint8_t ArmController::SERVO_PARK_DEG[SERVOS_COUNT] =  {90,  20,  10,  50,  90,  71}; // arm parking positions. Set 255 to skip
+
+uint16_t ArmController::servo_current_position[SERVOS_COUNT] = {};
+int16_t  ArmController::servo_current_speed[SERVOS_COUNT] = {};
+uint16_t ArmController::servo_target_position[SERVOS_COUNT] =  {};
+
+#define SERVO_TIMER_TASK_NAME "SERVO TIMER"
+TimerHandle_t ArmController::xServoUpdateTimerHandle;
+
+static const char* LOG_TAG = "ARM";
+
+void ArmController::init() {
+	// Make sure the arm is initialized in the parked position
+	// Be careful about what you have in your SERVO_PARK_DEG
+	// or uninitialized arm can damage lots of stuff around the robot
+	parkArm();
+	for(int8_t i = (SERVOS_COUNT-1); i>=0; i--) {
+		servo_current_position[i] = servo_target_position[i];
+		PWMBoardController::setPWM(SERVO_PWM_PORTS[i], 0, servo_current_position[i]);
+	}
+
+	// start the arm moving timer task
+	// we use it to move smoothly all servos of the arm simultaneously
+	xServoUpdateTimerHandle = xTimerCreate(
+			SERVO_TIMER_TASK_NAME,
+			pdMS_TO_TICKS(SERVO_STEP_DURATION), /* period/time */
+			pdTRUE, /* auto reload */
+			(void*)0, /* timer ID */
+			servoTimerCallback); /* callback */
+
+	if (xServoUpdateTimerHandle!=NULL) {
+		if(xTimerStart(xServoUpdateTimerHandle, 0) == pdPASS ) {
+			ESP_LOGI(LOG_TAG, "ARM Controller initiated");
+		} else {
+			ESP_LOGE(LOG_TAG, "ARM Controller Timer start failed");
+		}
+	} else {
+		ESP_LOGE(LOG_TAG, "ARM Controller Timer creation failed");
+	}
+}
 
 void ArmController::parkArm() {
 	for(int8_t i = (SERVOS_COUNT-1); i>=0; i--) {
@@ -52,9 +88,66 @@ void ArmController::moveServo(uint8_t servoID, uint8_t servoPositionDEG) {
 	if(servoID < SERVOS_COUNT) {
 		if((servoPositionDEG>= SERVO_MIN_DEG[servoID]) &&
 				(servoPositionDEG<= SERVO_MAX_DEG[servoID])) {
-			uint16_t pulse = map(servoPositionDEG, 0, 180, SERVOMIN, SERVOMAX);
-			PWMBoardController::setPWM(SERVO_PWM_PORTS[servoID], 0, pulse);
+			servo_target_position[servoID] = map(servoPositionDEG, 0, 180, SERVOMIN_PULSE, SERVOMAX_PULSE);
 		}
+	}
+}
+
+void ArmController::servoTimerCallback(TimerHandle_t pxTimer) {
+	for(int servoID = 0; servoID<SERVOS_COUNT; servoID++) {
+		if(servo_current_position[servoID] == servo_target_position[servoID]) {
+			// nothing to do for this servo
+			continue;
+		}
+
+		// detect the desired rotation direction
+		bool positiveDirection = servo_current_position[servoID] < servo_target_position[servoID];
+
+		// should we change rotation direction?
+		if(servo_current_speed[servoID] != 0) {
+			if((servo_current_speed[servoID]>0)!=positiveDirection) {
+				// stop the movement and wait for one cycle
+				servo_current_speed[servoID] = 0;
+				ESP_LOGI(LOG_TAG, "CALLBACK REDIRECT %d c=%d t=%d", servoID, servo_current_position[servoID], servo_target_position[servoID]);
+				continue;
+			}
+		}
+
+		// being here means the servo either does not move, or moves to the expected direction
+		uint16_t absDistance = abs(servo_target_position[servoID] - servo_current_position[servoID]);
+		uint16_t absSpeed = abs(servo_current_speed[servoID]);
+
+		if(servoID == 1) {
+			ESP_LOGI(LOG_TAG, "CALLBACK %d c=%d t=%d ad=%d as=%d", servoID, servo_current_position[servoID], servo_target_position[servoID], absDistance, absSpeed);
+		}
+
+		// Can we reach the destination within one tick?
+		if(absDistance <= SERVO_SPEED_MIN) {
+			servo_current_position[servoID] = servo_target_position[servoID];
+			servo_current_speed[servoID] = 0;
+		} else {
+			// should we start decreasing the speed because approaching the destination?
+			if(absDistance <= SERVO_SLOW_DOWN_DISTANCE) {
+				absSpeed /=SERVO_SPEED_ACCELERATION;
+				if(absSpeed<SERVO_SPEED_MIN) {
+					absSpeed = SERVO_SPEED_MIN;
+				}
+			} else
+				// destination is far. should we increase the speed to the maximum
+				if(absSpeed < SERVO_SPEED_MAX) {
+					if(absSpeed == 0) {
+						// if we were at zero speed - set a minimum speed
+						absSpeed = SERVO_SPEED_MIN;
+					} else {
+						// if we were moving already - double the speed
+						absSpeed*=SERVO_SPEED_ACCELERATION;
+					}
+				}
+			servo_current_speed[servoID] = positiveDirection? absSpeed : -absSpeed;
+			servo_current_position[servoID] += servo_current_speed[servoID];
+		}
+
+		PWMBoardController::setPWM(SERVO_PWM_PORTS[servoID], 0, servo_current_position[servoID]);
 	}
 }
 

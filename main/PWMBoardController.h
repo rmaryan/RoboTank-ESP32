@@ -25,6 +25,8 @@
 #define MAIN_PWMBOARDCONTROLLER_H_
 
 #include <stdint.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 class PWMBoardController {
 public:
@@ -35,6 +37,7 @@ public:
 
 	/*
 	 * Sets desired PWM pulses on the specified board pin.
+	 * This method is multithreading-safe.
 	 * num - pin #
 	 * on - moment to turn signal ON
 	 * off - moment to turn signal OFF
@@ -43,12 +46,16 @@ public:
 
 	/*
 	 * Turns the specified board pin ON or OFF
+	 * This method is using setPWM and thus is multithreading-safe.
 	 * num - pin #
 	 * ON - if true - turn on, else turn off
 	 */
 	static void setPinON(uint8_t num, bool ON);
 
 private:
+	// semaphore to safeguard the access to PWM board hardware access
+	static SemaphoreHandle_t xPWMSemaphore;
+
 	// sends the low-level command to the PWM board (1 byte - register address, 1 byte - data)
 	static void sendPWMData(uint8_t addr, uint8_t data);
 	// receives data from the PWM board

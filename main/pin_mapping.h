@@ -58,10 +58,10 @@
 /*======================================*/
 #define PIN_PWM_ARM_SERVO0 7
 #define PIN_PWM_ARM_SERVO1 8
-#define PIN_PWM_ARM_SERVO2 0 //FIXME
-#define PIN_PWM_ARM_SERVO3 0 //FIXME
-#define PIN_PWM_ARM_SERVO4 0 //FIXME
-#define PIN_PWM_ARM_SERVO5 0 //FIXME
+#define PIN_PWM_ARM_SERVO2 9
+#define PIN_PWM_ARM_SERVO3 10
+#define PIN_PWM_ARM_SERVO4 12
+#define PIN_PWM_ARM_SERVO5 13
 
 #define PIN_PWM_LIGHTS_HEAD 0 //FIXME
 #define PIN_PWM_LIGHTS_REAR 0 //FIXME

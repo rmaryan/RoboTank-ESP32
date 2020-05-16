@@ -20,11 +20,11 @@
 #include "OTAManager.h"
 
 #include <sys/param.h>
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include "esp_ota_ops.h"
+#include <esp_system.h>
+#include <esp_wifi.h>
+#include <esp_log.h>
+#include <nvs_flash.h>
+#include <esp_ota_ops.h>
 
 #define REBOOT_TASK_NAME "REBOOT_TASK"
 #define RECONNECT_RETRY_MAX 10

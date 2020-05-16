@@ -20,6 +20,7 @@
 #include "PWMBoardController.h"
 
 #include <driver/i2c.h>
+#include <esp_log.h>
 #include "pin_mapping.h"
 
 // Board-specific definitions
@@ -37,6 +38,10 @@
 
 // We hardcode 50 Hz - this is what works for the analog servos
 #define SERVOFREQ 50
+
+static const char* LOG_TAG = "PWM";
+
+SemaphoreHandle_t PWMBoardController::xPWMSemaphore;
 
 void PWMBoardController::init() {
 	// set up the I2C interface
@@ -69,6 +74,14 @@ void PWMBoardController::init() {
 	vTaskDelay(5/portTICK_PERIOD_MS);
 	sendPWMData(PCA9685_MODE1, oldmode | MODE1_RESTART | MODE1_AI);
 	vTaskDelay(10/portTICK_PERIOD_MS);
+
+	// Create the access safeguard mutex
+	xPWMSemaphore = xSemaphoreCreateMutex();
+	if(xPWMSemaphore == NULL) {
+		ESP_LOGE(LOG_TAG, "Semaphore creation failed");
+	}
+
+	ESP_LOGI(LOG_TAG, "PWM Board Controller initiated");
 }
 
 void PWMBoardController::sendPWMData(uint8_t addr, uint8_t data) {
@@ -83,17 +96,22 @@ void PWMBoardController::sendPWMData(uint8_t addr, uint8_t data) {
 }
 
 void PWMBoardController::setPWM(uint8_t num, uint16_t on, uint16_t off) {
-	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-	i2c_master_start(cmd);
-	i2c_master_write_byte(cmd, (PCA9685_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
-	i2c_master_write_byte(cmd, PCA9685_LED0_ON_L + 4 * num, ACK_CHECK_EN);
-	i2c_master_write_byte(cmd, on, ACK_CHECK_EN);
-	i2c_master_write_byte(cmd, on >> 8, ACK_CHECK_EN);
-	i2c_master_write_byte(cmd, off, ACK_CHECK_EN);
-	i2c_master_write_byte(cmd, off >> 8, ACK_CHECK_EN);
-	i2c_master_stop(cmd);
-	i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
-	i2c_cmd_link_delete(cmd);
+	if( xSemaphoreTake(xPWMSemaphore, (TickType_t) 2) == pdTRUE ) {
+		i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+		i2c_master_start(cmd);
+		i2c_master_write_byte(cmd, (PCA9685_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
+		i2c_master_write_byte(cmd, PCA9685_LED0_ON_L + 4 * num, ACK_CHECK_EN);
+		i2c_master_write_byte(cmd, on, ACK_CHECK_EN);
+		i2c_master_write_byte(cmd, on >> 8, ACK_CHECK_EN);
+		i2c_master_write_byte(cmd, off, ACK_CHECK_EN);
+		i2c_master_write_byte(cmd, off >> 8, ACK_CHECK_EN);
+		i2c_master_stop(cmd);
+		i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
+		i2c_cmd_link_delete(cmd);
+		xSemaphoreGive(xPWMSemaphore);
+	} else {
+		ESP_LOGE(LOG_TAG, "Semaphore timeout. PWM command was lost.");
+	}
 }
 
 uint8_t PWMBoardController::receivePWMData(uint8_t addr) {

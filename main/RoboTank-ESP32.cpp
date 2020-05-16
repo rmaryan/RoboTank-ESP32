@@ -22,11 +22,11 @@
  */
 
 #include <stdio.h>
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
-#include "esp_spi_flash.h"
+#include <esp_log.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <esp_system.h>
+#include <esp_spi_flash.h>
 #include "sdkconfig.h"
 
 #include "OTAManager.h"
@@ -59,7 +59,7 @@ void app_main()
 	PWMBoardController::init();
 
 	// Arm Controller
-	//ArmController::
+	ArmController::init();
 	// This is the arm servos calibration hook.
 	// If you uncomment SERVO_CALIBRATION_MODE definition in ArmController.h - the main execution thread is highjacked
 	// Connect to the robot in serial console and send servo position commands as requested. This way you can define edge
@@ -69,6 +69,7 @@ void app_main()
 	// Nothing is executed beyond this step
 #endif
 
+	/*
 	while(true)	{
 		for(int i=10; i<140; i+=10) {
 			ArmController::moveServo(0, i);
@@ -80,7 +81,6 @@ void app_main()
 		}
 
 	}
-	/*
 	// the hello world dance
 	MotorL298NDriver::go(160);
 	PWMBoardController::setPinON(14,true);
