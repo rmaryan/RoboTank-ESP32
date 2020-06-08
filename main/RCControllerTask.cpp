@@ -18,6 +18,10 @@
  */
 
 #include "RCControllerTask.h"
+
+#include <esp_log.h>
+static const char* LOG_TAG = "RC";
+
 #include "driver/uart.h"
 #include "pin_mapping.h"
 
@@ -25,6 +29,18 @@
 #define RC_TASK_NAME "RC_CONTROLLER"
 // the UART number to be used for the RC
 #define UART_NUM UART_NUM_1
+
+
+uint8_t RCControllerTask::state;
+uint32_t RCControllerTask::last;
+uint8_t RCControllerTask::buffer[PROTOCOL_LENGTH];
+uint8_t RCControllerTask::ptr;
+uint8_t RCControllerTask::len;
+uint16_t RCControllerTask::channel[PROTOCOL_CHANNELS];
+uint16_t RCControllerTask::chksum;
+uint8_t RCControllerTask::lchksum;
+xTaskHandle RCControllerTask::handle = NULL;
+SemaphoreHandle_t RCControllerTask::channelSemaphore = NULL;
 
 void RCControllerTask::taskFunction() {
 	while (1) {
@@ -119,20 +135,40 @@ void RCControllerTask::init() {
 	lchksum = 0;
 
 	// We'll use UART_NUM_1 for this channel
-	ESP_ERROR_CHECK(uart_param_config(UART_NUM, &rcUartConfig));
+	if(uart_param_config(UART_NUM, &rcUartConfig)!=ESP_OK) {
+		ESP_LOGE(LOG_TAG, "RC Module UART configuration failed");
+		return;
+	}
 
-	ESP_ERROR_CHECK(uart_set_pin(UART_NUM,
+	if(uart_set_pin(UART_NUM,
 			0, // TX
 			PIN_PIN_ESP32_RC_RX, // RX
-			UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+			UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)
+		!=ESP_OK) {
+		ESP_LOGE(LOG_TAG, "RC Module setting UART pin failed");
+		return;
+	}
 
-	ESP_ERROR_CHECK(uart_driver_install(UART_NUM, 2048, 0, 10, NULL, 0));
+	if(uart_driver_install(UART_NUM, 2048, 0, 10, NULL, 0)!=ESP_OK) {
+		ESP_LOGE(LOG_TAG, "RC Module UART driver install failed");
+		return;
+	}
 
 	// Creating binary semaphore to protect channel data list
 	channelSemaphore = xSemaphoreCreateBinary();
+	if(channelSemaphore == NULL) {
+		ESP_LOGE(LOG_TAG, "RC Module semaphore creation failed");
+		return;
+	}
 
 	// Start the listener task
 	xTaskCreate(taskfun, RC_TASK_NAME, configMINIMAL_STACK_SIZE, NULL, RC_CONTROLLER_PRIORITY, &handle);
+	if(handle == NULL ) {
+		ESP_LOGE(LOG_TAG, "RC Module task creation failed");
+		return;
+	}
+
+	ESP_LOGI(LOG_TAG, "RC Module initiated");
 }
 
 uint16_t RCControllerTask::getChannelState(uint8_t channedID) {

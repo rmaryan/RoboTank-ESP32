@@ -26,6 +26,10 @@
 #include <nvs_flash.h>
 #include <esp_ota_ops.h>
 
+#ifdef LOG_USE_WEB_FRONTEND
+#include "BufLogger.h"
+#endif
+
 #define REBOOT_TASK_NAME "REBOOT_TASK"
 #define RECONNECT_RETRY_MAX 10
 
@@ -65,6 +69,13 @@ httpd_uri_t OTAManager::http_status_struct = {
 		.handler = http_update_status_handler,
 		.user_ctx = NULL
 };
+httpd_uri_t OTAManager::http_logs_struct = {
+		.uri = "/logs",
+		.method = HTTP_GET,
+		.handler = http_update_logs_handler,
+		.user_ctx = NULL
+};
+
 
 void OTAManager::init() {
 	//Initialize NVS
@@ -185,6 +196,7 @@ void OTAManager::httpStartServer() {
 			httpd_register_uri_handler(server, &http_favicon_png_struct);
 			httpd_register_uri_handler(server, &http_update_struct);
 			httpd_register_uri_handler(server, &http_status_struct);
+			httpd_register_uri_handler(server, &http_logs_struct);
 		} else {
 			ESP_LOGE(LOG_TAG, "HTTP Server start failed");
 		}
@@ -305,5 +317,27 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 		ESP_LOGE(LOG_TAG, "HTTP POST OTA End Error");
 	}
 	ESP_LOGI(LOG_TAG, "HTTP POST flashing succeeded");
+	return ESP_OK;
+}
+
+esp_err_t OTAManager::http_update_logs_handler(httpd_req_t *req) {
+	//Lets avoid flooding logs with the logs request logs
+	//ESP_LOGI(LOG_TAG, "Request received: get logs");
+
+#ifdef LOG_USE_WEB_FRONTEND
+	char* recent_logs = BufLogger::pullLines();
+#else
+	char recent_logs[] = "NO LOGS SUPPLIED\n";
+#endif
+
+	if(recent_logs!=NULL) {
+		httpd_resp_set_type(req, "text/plain");
+		httpd_resp_send(req, recent_logs, strlen(recent_logs));
+	}
+
+#ifdef LOG_USE_WEB_FRONTEND
+	free(recent_logs);
+#endif
+
 	return ESP_OK;
 }

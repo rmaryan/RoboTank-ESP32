@@ -28,13 +28,17 @@
 #include <esp_system.h>
 #include <esp_spi_flash.h>
 #include "sdkconfig.h"
-
 #include "OTAManager.h"
 #include "pin_mapping.h"
 #include "PWMBoardController.h"
 #include "MotorL298NDriver.h"
 #include "SoundModuleController.h"
 #include "ArmController.h"
+#include "RCControllerTask.h"
+
+#ifdef LOG_USE_WEB_FRONTEND
+#include "BufLogger.h"
+#endif
 
 static const char* LOG_TAG = "ROOT";
 
@@ -44,6 +48,11 @@ void app_main();
 
 void app_main()
 {
+	// Initialize the web front-end logger
+#ifdef LOG_USE_WEB_FRONTEND
+	BufLogger::init();
+#endif
+
 	ESP_LOGI(LOG_TAG, "Starting the launch sequence...");
 	ESP_LOGI(LOG_TAG, "Version: %s %s", __TIME__, __DATE__);
 
@@ -69,18 +78,20 @@ void app_main()
 	// Nothing is executed beyond this step
 #endif
 
-	/*
-	while(true)	{
-		for(int i=10; i<140; i+=10) {
-			ArmController::moveServo(0, i);
-			vTaskDelay(2000 / portTICK_RATE_MS);
-		}
-		for(int i=140; i>10; i-=10) {
-			ArmController::moveServo(0, i);
-			vTaskDelay(2000 / portTICK_RATE_MS);
-		}
+	//RC Controller
+	RCControllerTask::init();
 
+
+	while(true)	{
+		ESP_LOGI(LOG_TAG, "PING");
+		vTaskDelay(10000 / portTICK_RATE_MS);
+		ESP_LOGW(LOG_TAG, "PINGW");
+		vTaskDelay(10000 / portTICK_RATE_MS);
+		ESP_LOGE(LOG_TAG, "PINGE");
+		vTaskDelay(10000 / portTICK_RATE_MS);
 	}
+
+	/*
 	// the hello world dance
 	MotorL298NDriver::go(160);
 	PWMBoardController::setPinON(14,true);

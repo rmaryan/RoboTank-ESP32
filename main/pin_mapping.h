@@ -37,7 +37,7 @@
 #define PIN_PIN_ESP32_PWM_SDA GPIO_NUM_14
 
 // pin used to connect to the RC receiver port
-#define PIN_PIN_ESP32_RC_RX GPIO_NUM_0 //FIXME
+#define PIN_PIN_ESP32_RC_RX GPIO_NUM_34
 
 // bottom RGB LED controlling pins
 #define PIN_PIN_ESP32_RGB_LEFT GPIO_NUM_0 //FIXME

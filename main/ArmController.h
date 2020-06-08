@@ -23,7 +23,7 @@
 #define MAIN_ARMCONTROLLER_H_
 
 /**
- * If you uncommend the line below - a special servo calibration mode is engaged.
+ * If you uncomment the line below - a special servo calibration mode is engaged.
  * It hijacks the main execution thread and opens a serial CLI interface with the computer.
  * You can change positions of the arm servos sending commands in the serial terminal.
  * Command format: SDDD, where S - is a servo ID (0-6) DDD - position in degree from 0 to 180

@@ -35,6 +35,10 @@
 #include "esp_event.h"
 #include "esp_http_server.h"
 
+// Keep this defined to allow log messages display on the robot's web page
+// Comment out the line to save memory
+#define LOG_USE_WEB_FRONTEND 1
+
 class OTAManager {
 private:
 	static EventGroupHandle_t reboot_event_group;
@@ -68,11 +72,14 @@ private:
 	static esp_err_t http_update_status_handler(httpd_req_t *req);
 	// Receives .bin file
 	static esp_err_t http_update_post_handler(httpd_req_t *req);
+	// Sends recent logs
+	static esp_err_t http_update_logs_handler(httpd_req_t *req);
 	// URI handler structures
 	static httpd_uri_t http_index_html_struct;
 	static httpd_uri_t http_favicon_png_struct;
 	static httpd_uri_t http_update_struct;
 	static httpd_uri_t http_status_struct;
+	static httpd_uri_t http_logs_struct;
 
 public:
 	static void init();
