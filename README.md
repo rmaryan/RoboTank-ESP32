@@ -1,12 +1,12 @@
 # RoboTank-ESP32
 
 <table>
-  <tr>
+<tr>
     <td>This is a source code and schematics for the ESP32-based robot with the 6-servos manipulator.</td>
 <td>
-![Robot](schematics/robot.jpg)
+  <img src="schematics/robot.jpg">
 </td>
-  </tr>
+</tr>
 </table>
 
 
@@ -17,8 +17,8 @@
   * [L298N Dual H Bridge Motor Driver](https://www.banggood.com/Wholesale-L298N-Dual-H-Bridge-Stepper-Motor-Driver-Board-p-42826.html?p=M908156347868201609Y)
   * [PCA9685 16-Channel 12-bit PWM Extender I2C](https://www.banggood.com/PCA9685-16-Channel-12-bit-PWM-Servo-Motor-Driver-I2C-Module-p-1170343.html?p=M908156347868201609Y)
   * [6-DOF Robotic Arm](https://www.banggood.com/ROT2U-6DOF-Silver-Aluminium-Robot-Arm-Clamp-Claw-Mount-Kit-With-Servos-p-1118027.html?p=M908156347868201609Y) - please note, we had to replace two of the original MG996R servos with stronger ones (see below)
-  * [SPT Servo SPT5535LV-320 35KG 320°](https://www.banggood.com/SPT-Servo-SPT5535LV-320-35KG-Large-Torque-Metal-Gear-Digital-Servo-For-RC-Robot-RC-Robot-Arm-p-1577513.html?p=M908156347868201609Y)
-  * [SPT Servo SPT5525LV-320 25KG 320°](https://www.banggood.com/SPT-Servo-SPT5525LV-320-25KG-Digital-Servo-320-Metal-Gear-Large-Torque-Servo-For-RC-Robot-p-1383203.html?p=M908156347868201609Y)
+  * [SPT Servo SPT5535LV-320 35KG 320Â°](https://www.banggood.com/SPT-Servo-SPT5535LV-320-35KG-Large-Torque-Metal-Gear-Digital-Servo-For-RC-Robot-RC-Robot-Arm-p-1577513.html?p=M908156347868201609Y)
+  * [SPT Servo SPT5525LV-320 25KG 320Â°](https://www.banggood.com/SPT-Servo-SPT5525LV-320-25KG-Digital-Servo-320-Metal-Gear-Large-Torque-Servo-For-RC-Robot-p-1383203.html?p=M908156347868201609Y)
   * [Ultrasonic distance sensor HC-SR04 with the servo-mounting cradle](https://www.banggood.com/Wholesale-Geekcreit-Ultrasonic-Module-HC-SR04-Distance-Measuring-Ranging-Transducer-Sensor-DC-5V-2-450cm-p-40313.html?p=M908156347868201609Y) 
   * [TowerPro SG90 Mini Gear Micro Servo 9g](http://www.banggood.com/TowerPro-SG90-Mini-Gear-Micro-Servo-9g-For-RC-Airplane-Helicopter-p-1009914.html?p=M908156347868201609Y)
   * [Infrared Obstacle Detectors](https://www.banggood.com/5Pcs-Infrared-Obstacle-Avoidance-Sensor-Smart-Car-Robot-p-951032.html?p=M908156347868201609Y) - 4x
