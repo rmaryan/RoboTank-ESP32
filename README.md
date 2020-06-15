@@ -1,6 +1,14 @@
 # RoboTank-ESP32
 
-This is a source code and schematics for the ESP32-based robot with the 6-servos manipulator.
+<table>
+  <tr>
+    <td>This is a source code and schematics for the ESP32-based robot with the 6-servos manipulator.</td>
+<td>
+![Robot](schematics/robot.jpg)
+</td>
+  </tr>
+</table>
+
 
 ## Used Components
 
