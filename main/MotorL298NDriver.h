@@ -25,11 +25,13 @@
 
 class MotorL298NDriver {
 private:
+	static const uint16_t MAX_SPEED = 4095;
+	static const uint16_t MIN_SPEED = 100;
 	static int16_t currentLeftSpeed;
 	static int16_t currentRightSpeed;
 
 public:
-	// Run both motors at the speed specified. Speed can be between -255 (backward) and 255 (forward)
+	// Run both motors at the speed specified. Speed can be between -4095 (backward) and 4095 (forward)
 	static void go(int16_t speed);
 	// Run each motor at different speed
 	static void go(int16_t leftSpeed, int16_t rightSpeed);

@@ -61,6 +61,7 @@ private:
 	static uint16_t servo_current_position[SERVOS_COUNT]; // actually - current PWM pulse length
 	static int16_t  servo_current_speed[SERVOS_COUNT];    // can be positive or negative, depending on the rotation direction
 	static uint16_t servo_target_position[SERVOS_COUNT];  // desired PWM pulse length
+	static uint8_t servo_target_positionDEG[SERVOS_COUNT]; // desired DEG position
 
 	// Servo moving smoothness parameters
 	static const uint16_t SERVO_STEP_DURATION = 100; // milliseconds
@@ -87,7 +88,12 @@ public:
 	// @param servoPositionDEG [0..180]
 	// Please note - servo position degree is indicative. For the 270 degree servos it will be scaled up to the whole servo rotation range.
 	// So consider 0 and 180 as the opposite edge positions and 90 as a mid point
-	static void moveServo(uint8_t servoID, uint8_t servoPositionDEG);
+	static void setServo(uint8_t servoID, uint8_t servoPositionDEG);
+
+	// Change the servo position relatively
+	// @param servoID
+	// @param turningAngleDEG - how much to turn the servo in DEG. Positive values turn the servo right
+	static void turnServo(uint8_t servoID, int16_t turningAngleDEG);
 
 	// Move arm to the static parking position
 	static void parkArm();

@@ -47,6 +47,8 @@ Having a connection started, robot launches own Web Server. You can find the IP 
 
 Direct your web browser to the robot's IP address and a home page will be shown. You can upload new firmware updates there (so you don't need to connect your robot with the USB wire any more). Also you can see the log messges output right on the web page (this feature will work if LOG_USE_WEB_FRONTEND is defined in RoboTank-ESP32.cpp). 
 
+![Schematics](schematics/robot_page.png)
+
 ## On-board sounds
 
 Place the files from sdcard folder to the root of the sound module SD card.

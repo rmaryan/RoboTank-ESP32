@@ -35,34 +35,43 @@ class RCControllerTask {
 private:
 	// Protocol parsing definitions
 	enum State {
-		GET_LENGTH,
-		GET_DATA,
-		GET_CHKSUML,
-		GET_CHKSUMH,
-		DISCARD,
+		STATE_SEARCHING_FOR_LENGTH,
+		STATE_SEARCHING_FOR_COMMAND,
+		STATE_FILLING_BUFFER,
 	};
 
-	static const uint8_t PROTOCOL_LENGTH = 0x20;
-	static const uint8_t PROTOCOL_OVERHEAD = 3; // <len><cmd><data....><chkl><chkh>
-	static const uint8_t PROTOCOL_TIMEGAP = 3; // Packets are received very ~7ms so use ~half that for the gap
-	static const uint8_t PROTOCOL_CHANNELS = 6;
+	static const uint8_t PROTOCOL_LENGTH = 0x20;    // The pack length, also, the first byte in the pack
 	static const uint8_t PROTOCOL_COMMAND40 = 0x40; // Command is always 0x40
+	static const uint8_t PROTOCOL_DATA_LENGTH = PROTOCOL_LENGTH - 2; // length of the protocol without the first 2 bytes header
+	static const uint8_t PROTOCOL_DATA_WORDS = PROTOCOL_DATA_LENGTH/2; // 2-byte words cound in the protocol data
+	static const uint8_t PROTOCOL_TIMEGAP = 3; // Packets are received very ~7ms so use ~half that for the gap
+	static const uint8_t PROTOCOL_CHANNELS = 10;
+	static const uint16_t BUFFER_SIZE = 256;  // Size for the UART reading buffer
+	static const uint16_t TASK_STACK_SIZE = 2048;  // Size for the UART reading buffer
 
+	union BUFFER_UNION {
+		uint8_t  bytes[PROTOCOL_DATA_LENGTH];
+		uint16_t words[PROTOCOL_DATA_WORDS];
+	};
+	static BUFFER_UNION buffer;
+
+	//	static uint8_t uart_buffer[BUFFER_SIZE];
 	static uint8_t state;
-	static uint32_t last;
-	static uint8_t buffer[PROTOCOL_LENGTH];
+	//	static int64_t last;
+	// protocol buffer, excludes the leading 0x20 and 0x10
 	static uint8_t ptr;
-	static uint8_t len;
+	//	static uint8_t len;
 	static uint16_t channel[PROTOCOL_CHANNELS];
 	static uint16_t chksum;
-	static uint8_t lchksum;
+	//	static uint8_t lchksum;
 
 
 	// Reference to the task created
 	static xTaskHandle handle;
 
 	// Internal semaphore to access buffers in a thread-safe way
-	static SemaphoreHandle_t channelSemaphore;
+	// Let's assume that 16-bit int assignments are atomic
+	//static SemaphoreHandle_t channelSemaphore;
 
 	// The task code is here
 	static void taskFunction();
@@ -72,6 +81,9 @@ private:
 		static_cast<RCControllerTask *>(parm)->taskFunction();
 	}
 
+	// this method processes the content of the buffer
+	// if the checksum is OK - the channels data is populated with the parsed values
+	static void processBuffer();
 public:
 	// Launch the RC listening thread
 	// Returns the reference to the RC controller incoming messages buffer

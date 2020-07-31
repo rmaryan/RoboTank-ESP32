@@ -35,6 +35,7 @@
 #include "SoundModuleController.h"
 #include "ArmController.h"
 #include "RCControllerTask.h"
+#include "RoboTankUtils.h"
 
 #ifdef LOG_USE_WEB_FRONTEND
 #include "BufLogger.h"
@@ -81,29 +82,52 @@ void app_main()
 	//RC Controller
 	RCControllerTask::init();
 
-
 	while(true)	{
-		ESP_LOGI(LOG_TAG, "PING");
-		vTaskDelay(10000 / portTICK_RATE_MS);
-		ESP_LOGW(LOG_TAG, "PINGW");
-		vTaskDelay(10000 / portTICK_RATE_MS);
-		ESP_LOGE(LOG_TAG, "PINGE");
-		vTaskDelay(10000 / portTICK_RATE_MS);
-	}
+		// Quick and dirty RC for the motors and a hand
+		const uint16_t MAX_SPEED = 4095;
+		uint16_t in_steering = RCControllerTask::getChannelState(0);
+		uint16_t in_throttle = RCControllerTask::getChannelState(1);
 
-	/*
-	// the hello world dance
-	MotorL298NDriver::go(160);
-	PWMBoardController::setPinON(14,true);
-	PWMBoardController::setPinON(15,false);
-	vTaskDelay(2000 / portTICK_RATE_MS);
-	MotorL298NDriver::go(-160);
-	PWMBoardController::setPinON(15,true);
-	PWMBoardController::setPinON(14,false);
-	vTaskDelay(2000 / portTICK_RATE_MS);
-	MotorL298NDriver::go(150, -150);
-	PWMBoardController::setPinON(15,true);
-	PWMBoardController::setPinON(14,true);
-	vTaskDelay(2000 / portTICK_RATE_MS);
-	 */
+		int16_t leftSpeed = map(in_throttle, 1000, 2000, -MAX_SPEED, MAX_SPEED);
+		int16_t rightSpeed = leftSpeed;
+
+		int16_t turnRate = map(in_steering, 1000, 2000, MAX_SPEED, -MAX_SPEED);
+
+		leftSpeed += turnRate;
+		rightSpeed -= turnRate;
+
+		if(leftSpeed > MAX_SPEED) {
+			uint16_t delta = MAX_SPEED - leftSpeed;
+			leftSpeed -= delta;
+			rightSpeed += delta;
+		} else
+			if(rightSpeed > MAX_SPEED) {
+				uint16_t delta = MAX_SPEED - rightSpeed;
+				leftSpeed += delta;
+				rightSpeed -= delta;
+			}
+		MotorL298NDriver::go(leftSpeed, rightSpeed);
+
+		// hand is safeguarded by the channel 5
+		if(RCControllerTask::getChannelState(5) == 2000) {
+			// the arm servo is chosen by the channel 4
+			uint8_t servoID = 0;
+			switch (RCControllerTask::getChannelState(4)) {
+			case 1000:
+				servoID = 2;
+				break;
+			case 1500:
+				servoID = 1;
+				break;
+			}
+			uint16_t servoPosition = RCControllerTask::getChannelState(3);
+			if((servoPosition >1400) && (servoPosition < 1600)) servoPosition = 1500;
+			ArmController::turnServo(servoID, map(servoPosition, 1000, 2000, -10, +10));
+
+		} else {
+			ArmController::parkArm();
+		}
+
+		vTaskDelay(200 / portTICK_RATE_MS);
+	}
 }

@@ -41,6 +41,7 @@ const uint8_t ArmController::SERVO_PARK_DEG[SERVOS_COUNT] =  {90,  20,  10,  50,
 uint16_t ArmController::servo_current_position[SERVOS_COUNT] = {};
 int16_t  ArmController::servo_current_speed[SERVOS_COUNT] = {};
 uint16_t ArmController::servo_target_position[SERVOS_COUNT] =  {};
+uint8_t ArmController::servo_target_positionDEG[SERVOS_COUNT] =  {};
 
 #define SERVO_TIMER_TASK_NAME "SERVO TIMER"
 TimerHandle_t ArmController::xServoUpdateTimerHandle;
@@ -77,17 +78,31 @@ void ArmController::init() {
 	}
 }
 
-void ArmController::parkArm() {
-	for(int8_t i = (SERVOS_COUNT-1); i>=0; i--) {
-		moveServo(i, SERVO_PARK_DEG[i]);
+void ArmController::turnServo(uint8_t servoID, int16_t turningAngleDEG) {
+	if(servoID < SERVOS_COUNT) {
+		int16_t desiredPositionDEG = servo_target_positionDEG[servoID] + turningAngleDEG;
+		if(desiredPositionDEG< SERVO_MIN_DEG[servoID])
+			desiredPositionDEG = SERVO_MIN_DEG[servoID];
+		else
+			if(desiredPositionDEG > SERVO_MAX_DEG[servoID])
+				desiredPositionDEG = SERVO_MAX_DEG[servoID];
+
+		setServo(servoID, desiredPositionDEG);
 	}
 }
 
-void ArmController::moveServo(uint8_t servoID, uint8_t servoPositionDEG) {
+void ArmController::parkArm() {
+	for(int8_t i = (SERVOS_COUNT-1); i>=0; i--) {
+		setServo(i, SERVO_PARK_DEG[i]);
+	}
+}
+
+void ArmController::setServo(uint8_t servoID, uint8_t servoPositionDEG) {
 	// Check the parameters validity not to harm innocent PWM lines
 	if(servoID < SERVOS_COUNT) {
 		if((servoPositionDEG>= SERVO_MIN_DEG[servoID]) &&
 				(servoPositionDEG<= SERVO_MAX_DEG[servoID])) {
+			servo_target_positionDEG[servoID] = servoPositionDEG;
 			servo_target_position[servoID] = map(servoPositionDEG, 0, 180, SERVOMIN_PULSE, SERVOMAX_PULSE);
 		}
 	}
@@ -200,7 +215,7 @@ void ArmController::servoCalibration() {
 			buffLen = 0;
 
 			printf("\nSetting servo %d to position %d\n", servoID, servoPosition);
-			moveServo(servoID, servoPosition);
+			setServo(servoID, servoPosition);
 		}
 	}
 }

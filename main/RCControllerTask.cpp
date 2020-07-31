@@ -31,83 +31,63 @@ static const char* LOG_TAG = "RC";
 #define UART_NUM UART_NUM_1
 
 
+//uint8_t RCControllerTask::uart_buffer[BUFFER_SIZE];
 uint8_t RCControllerTask::state;
-uint32_t RCControllerTask::last;
-uint8_t RCControllerTask::buffer[PROTOCOL_LENGTH];
+//int64_t RCControllerTask::last;
+RCControllerTask::BUFFER_UNION RCControllerTask::buffer;
 uint8_t RCControllerTask::ptr;
-uint8_t RCControllerTask::len;
+//uint8_t RCControllerTask::len;
 uint16_t RCControllerTask::channel[PROTOCOL_CHANNELS];
 uint16_t RCControllerTask::chksum;
-uint8_t RCControllerTask::lchksum;
+//uint8_t RCControllerTask::lchksum;
 xTaskHandle RCControllerTask::handle = NULL;
-SemaphoreHandle_t RCControllerTask::channelSemaphore = NULL;
+//SemaphoreHandle_t RCControllerTask::channelSemaphore = NULL;
 
 void RCControllerTask::taskFunction() {
 	while (1) {
 		size_t bufferLength = 0;
-		ESP_ERROR_CHECK(uart_get_buffered_data_len(UART_NUM, (size_t*)&bufferLength));
+		ESP_ERROR_CHECK(uart_get_buffered_data_len(UART_NUM, &bufferLength));
 
 		if(bufferLength > 0) {
-
-			uint32_t now = esp_timer_get_time() / 1000ULL;
-			if (now - last >= PROTOCOL_TIMEGAP) {
-				state = GET_LENGTH;
-			}
-			last = now;
-
-			uint8_t v = 0;
-			if(uart_read_bytes(UART_NUM, &v, 1, 100) != 1) continue;
-
-			switch (state) {
-			case GET_LENGTH:
-				if (v <= PROTOCOL_LENGTH) {
-					ptr = 0;
-					len = v - PROTOCOL_OVERHEAD;
-					chksum = 0xFFFF - v;
-					state = GET_DATA;
-				} else {
-					state = DISCARD;
-				}
-				break;
-
-			case GET_DATA:
-				buffer[ptr++] = v;
-				chksum -= v;
-				if (ptr == len)	{
-					state = GET_CHKSUML;
-				}
-				break;
-
-			case GET_CHKSUML:
-				lchksum = v;
-				state = GET_CHKSUMH;
-				break;
-
-			case GET_CHKSUMH:
-				// Validate checksum
-				if (chksum == (v << 8) + lchksum) {
-					// Execute command - we only know command 0x40
-					switch (buffer[0])	{
-					case PROTOCOL_COMMAND40:
-						if( xSemaphoreTake(channelSemaphore, ( TickType_t ) 10 ) == pdTRUE ) {
-							// Valid - extract channel data
-							for (uint8_t i = 1; i < PROTOCOL_CHANNELS * 2 + 1; i += 2) {
-								channel[i / 2] = buffer[i] | (buffer[i + 1] << 8);
-							}
-							xSemaphoreGive(channelSemaphore);
-						}
-						break;
-
-					default:
-						break;
+			uint8_t value = 0;
+			if(uart_read_bytes(UART_NUM, &value, 1, 0) > 0) {
+				switch (state) {
+				case STATE_SEARCHING_FOR_LENGTH:
+					if(value == PROTOCOL_LENGTH) {
+						state = STATE_SEARCHING_FOR_COMMAND;
+						chksum = 0xFFFF - PROTOCOL_LENGTH;
 					}
-				}
-				state = DISCARD;
-				break;
+					break;
+				case STATE_SEARCHING_FOR_COMMAND:
+					if(value == PROTOCOL_COMMAND40) {
+						// promote to the next stage only if the command is correct
+						state = STATE_FILLING_BUFFER;
+						ptr = 0;
+						chksum -= PROTOCOL_COMMAND40;
+					} else {
+						// otherwise - start searching for the next frame
+						state = STATE_SEARCHING_FOR_LENGTH;
+					}
+					break;
+				case STATE_FILLING_BUFFER:
+					if(ptr < PROTOCOL_DATA_LENGTH) {
+						// update checksum only with the channel bytes
+						if(ptr < (PROTOCOL_DATA_LENGTH - 2)) {
+							chksum -= value;
+						}
 
-			case DISCARD:
-			default:
-				break;
+						buffer.bytes[ptr++] = value;
+
+						// we are at the end of the buffer
+						if(ptr == PROTOCOL_DATA_LENGTH) {
+							processBuffer();
+							state = STATE_SEARCHING_FOR_LENGTH;
+						}
+					} else {
+						// something went wrong, resetting the state
+						state = STATE_SEARCHING_FOR_LENGTH;
+					}
+				} // switch
 			}
 		} else {
 			// the buffer is empty - let's wait a bit
@@ -127,14 +107,9 @@ void RCControllerTask::init() {
 	rcUartConfig.rx_flow_ctrl_thresh = 120;
 
 	// Initialize the protocol state machine
-	state = DISCARD;
-	last = esp_timer_get_time() / 1000ULL;
+	state = STATE_SEARCHING_FOR_LENGTH;
 	ptr = 0;
-	len = 0;
-	chksum = 0;
-	lchksum = 0;
 
-	// We'll use UART_NUM_1 for this channel
 	if(uart_param_config(UART_NUM, &rcUartConfig)!=ESP_OK) {
 		ESP_LOGE(LOG_TAG, "RC Module UART configuration failed");
 		return;
@@ -144,25 +119,25 @@ void RCControllerTask::init() {
 			0, // TX
 			PIN_PIN_ESP32_RC_RX, // RX
 			UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)
-		!=ESP_OK) {
+			!=ESP_OK) {
 		ESP_LOGE(LOG_TAG, "RC Module setting UART pin failed");
 		return;
 	}
 
-	if(uart_driver_install(UART_NUM, 2048, 0, 10, NULL, 0)!=ESP_OK) {
+	if(uart_driver_install(UART_NUM, BUFFER_SIZE*2, 0, 10, NULL, 0)!=ESP_OK) {
 		ESP_LOGE(LOG_TAG, "RC Module UART driver install failed");
 		return;
 	}
 
 	// Creating binary semaphore to protect channel data list
-	channelSemaphore = xSemaphoreCreateBinary();
-	if(channelSemaphore == NULL) {
-		ESP_LOGE(LOG_TAG, "RC Module semaphore creation failed");
-		return;
-	}
+	//	channelSemaphore = xSemaphoreCreateMutex();
+	//	if(channelSemaphore == NULL) {
+	//		ESP_LOGE(LOG_TAG, "RC Module semaphore creation failed");
+	//		return;
+	//	}
 
 	// Start the listener task
-	xTaskCreate(taskfun, RC_TASK_NAME, configMINIMAL_STACK_SIZE, NULL, RC_CONTROLLER_PRIORITY, &handle);
+	xTaskCreate(taskfun, RC_TASK_NAME, TASK_STACK_SIZE, NULL, RC_CONTROLLER_PRIORITY, &handle);
 	if(handle == NULL ) {
 		ESP_LOGE(LOG_TAG, "RC Module task creation failed");
 		return;
@@ -171,15 +146,27 @@ void RCControllerTask::init() {
 	ESP_LOGI(LOG_TAG, "RC Module initiated");
 }
 
+void RCControllerTask::processBuffer() {
+	// update the channels only if CRC match
+	if(buffer.words[PROTOCOL_DATA_WORDS-1] == chksum) {
+		//		if( xSemaphoreTake(channelSemaphore, ( TickType_t ) 10 ) == pdTRUE ) {
+		for (uint8_t i = 0; i < PROTOCOL_CHANNELS; i++) {
+			channel[i] = buffer.words[i];
+		}
+		//			xSemaphoreGive(channelSemaphore);
+		//		}
+	}
+}
+
 uint16_t RCControllerTask::getChannelState(uint8_t channedID) {
 	if (channedID < PROTOCOL_CHANNELS) {
-		if( xSemaphoreTake(channelSemaphore, ( TickType_t ) 10 ) == pdTRUE ) {
-			uint16_t result = channel[channedID];
-			xSemaphoreGive(channelSemaphore);
-			return result;
-		} else {
-			return 0;
-		}
+		//		if( xSemaphoreTake(channelSemaphore, ( TickType_t ) 10 ) == pdTRUE ) {
+		uint16_t result = channel[channedID];
+		//			xSemaphoreGive(channelSemaphore);
+		return result;
+		//		} else {
+		//			return 0;
+		//		}
 	} else {
 		return 0;
 	}

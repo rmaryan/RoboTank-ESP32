@@ -330,9 +330,11 @@ esp_err_t OTAManager::http_update_logs_handler(httpd_req_t *req) {
 	char recent_logs[] = "NO LOGS SUPPLIED\n";
 #endif
 
+	httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
 	if(recent_logs!=NULL) {
-		httpd_resp_set_type(req, "text/plain");
 		httpd_resp_send(req, recent_logs, strlen(recent_logs));
+	} else {
+		httpd_resp_send(req, "", 0);
 	}
 
 #ifdef LOG_USE_WEB_FRONTEND

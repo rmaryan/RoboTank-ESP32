@@ -22,8 +22,6 @@
 
 #include "pin_mapping.h"
 #include "PWMBoardController.h"
-#include "RoboTankUtils.h"
-
 
 int16_t MotorL298NDriver::currentLeftSpeed = 0;
 int16_t MotorL298NDriver::currentRightSpeed = 0;
@@ -36,6 +34,21 @@ void MotorL298NDriver::go(int16_t leftSpeed, int16_t rightSpeed) {
 	bool goLeftForward = true;
 	bool goRightForward = true;
 
+	// normalize the speed per motors characteristics
+	if(leftSpeed < -MAX_SPEED)
+		leftSpeed = -MAX_SPEED;
+	else if(leftSpeed > MAX_SPEED)
+		leftSpeed = MAX_SPEED;
+	else if(abs(leftSpeed)<MIN_SPEED)
+		leftSpeed = 0;
+
+	if(rightSpeed < -MAX_SPEED)
+		rightSpeed = -MAX_SPEED;
+	else if(rightSpeed > MAX_SPEED)
+		rightSpeed = MAX_SPEED;
+	else if(abs(rightSpeed)<MIN_SPEED)
+		rightSpeed = 0;
+
 	if (leftSpeed != currentLeftSpeed) {
 		currentLeftSpeed = leftSpeed;
 		if (leftSpeed < 0) {
@@ -43,9 +56,9 @@ void MotorL298NDriver::go(int16_t leftSpeed, int16_t rightSpeed) {
 			leftSpeed = -leftSpeed;
 		}
 
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN1, !goLeftForward);
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN2, goLeftForward);
-		PWMBoardController::setPWM(PIN_PWM_MOTOR_ENA, 0, map(leftSpeed, 0, 255, 0, 4096));
+		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN1, goLeftForward);
+		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN2, !goLeftForward);
+		PWMBoardController::setPWM(PIN_PWM_MOTOR_ENA, 0, leftSpeed);
 	}
 
 	if (rightSpeed != currentRightSpeed) {
@@ -55,8 +68,8 @@ void MotorL298NDriver::go(int16_t leftSpeed, int16_t rightSpeed) {
 			rightSpeed = -rightSpeed;
 		}
 
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN3, !goRightForward);
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN4, goRightForward);
-		PWMBoardController::setPWM(PIN_PWM_MOTOR_ENB, 0, map(rightSpeed, 0, 255, 0, 4096));
+		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN3, goRightForward);
+		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN4, !goRightForward);
+		PWMBoardController::setPWM(PIN_PWM_MOTOR_ENB, 0, rightSpeed);
 	}
 }
