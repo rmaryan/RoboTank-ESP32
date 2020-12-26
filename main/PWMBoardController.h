@@ -50,7 +50,7 @@ public:
 	 * num - pin #
 	 * ON - if true - turn on, else turn off
 	 */
-	static void setPinON(uint8_t num, bool ON);
+	static void setPinON(uint8_t num, bool ON=true);
 
 private:
 	// semaphore to safeguard the access to PWM board hardware access

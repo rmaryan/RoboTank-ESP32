@@ -37,21 +37,21 @@
 #define PIN_PIN_ESP32_PWM_SDA GPIO_NUM_14
 
 // pin used to connect to the RC receiver port
-#define PIN_PIN_ESP32_RC_RX GPIO_NUM_34
+#define PIN_PIN_ESP32_RC_RX GPIO_NUM_25
 
 // bottom RGB LED controlling pins
-#define PIN_PIN_ESP32_RGB_LEFT GPIO_NUM_0 //FIXME
-#define PIN_PIN_ESP32_RGB_RIGHT GPIO_NUM_0 //FIXME
+#define PIN_PIN_ESP32_RGB_LEFT GPIO_NUM_32
+#define PIN_PIN_ESP32_RGB_RIGHT GPIO_NUM_33
 
 // ulstrasonic distance sensor pins
-#define PIN_PIN_ESP32_US_TRIG GPIO_NUM_0 //FIXME
-#define PIN_PIN_ESP32_US_ECHO GPIO_NUM_0 //FIXME
+#define PIN_PIN_ESP32_US_TRIG GPIO_NUM_34
+#define PIN_PIN_ESP32_US_ECHO GPIO_NUM_35
 
 // Infrared obstacle detectors pins
-#define PIN_PIN_ESP32_IR_FL GPIO_NUM_0 //FIXME
-#define PIN_PIN_ESP32_IR_FR GPIO_NUM_0 //FIXME
-#define PIN_PIN_ESP32_IR_DL GPIO_NUM_0 //FIXME
-#define PIN_PIN_ESP32_IR_DR GPIO_NUM_0 //FIXME
+#define PIN_PIN_ESP32_IR_FL GPIO_NUM_18
+#define PIN_PIN_ESP32_IR_FR GPIO_NUM_17
+#define PIN_PIN_ESP32_IR_DL GPIO_NUM_19
+#define PIN_PIN_ESP32_IR_DR GPIO_NUM_5
 
 
 /* PWM Multiplexer pins (PCA9685 board) */
@@ -63,8 +63,8 @@
 #define PIN_PWM_ARM_SERVO4 12
 #define PIN_PWM_ARM_SERVO5 13
 
-#define PIN_PWM_LIGHTS_HEAD 0 //FIXME
-#define PIN_PWM_LIGHTS_REAR 0 //FIXME
+#define PIN_PWM_LIGHTS_HEAD 14
+#define PIN_PWM_LIGHTS_REAR 11
 
 #define PIN_PWM_US_SERVO 0
 

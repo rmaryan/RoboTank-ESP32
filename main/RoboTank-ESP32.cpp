@@ -35,6 +35,7 @@
 #include "SoundModuleController.h"
 #include "ArmController.h"
 #include "RCControllerTask.h"
+#include "LightsController.h"
 #include "RoboTankUtils.h"
 
 #ifdef LOG_USE_WEB_FRONTEND
@@ -79,6 +80,23 @@ void app_main()
 	// Nothing is executed beyond this step
 #endif
 
+	// Lights controller
+	LightsController::init();
+
+	// IR Sensors init
+	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_FL);
+	gpio_set_direction(PIN_PIN_ESP32_IR_FL, GPIO_MODE_INPUT);
+	gpio_set_pull_mode(PIN_PIN_ESP32_IR_FL, GPIO_PULLDOWN_ONLY);
+	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_FR);
+	gpio_set_direction(PIN_PIN_ESP32_IR_FR, GPIO_MODE_INPUT);
+	gpio_set_pull_mode(PIN_PIN_ESP32_IR_FR, GPIO_PULLDOWN_ONLY);
+	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_DL);
+	gpio_set_direction(PIN_PIN_ESP32_IR_DL, GPIO_MODE_INPUT);
+	gpio_set_pull_mode(PIN_PIN_ESP32_IR_DL, GPIO_PULLDOWN_ONLY);
+	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_DR);
+	gpio_set_direction(PIN_PIN_ESP32_IR_DR, GPIO_MODE_INPUT);
+	gpio_set_pull_mode(PIN_PIN_ESP32_IR_DR, GPIO_PULLDOWN_ONLY);
+
 	//RC Controller
 	RCControllerTask::init();
 
@@ -87,6 +105,11 @@ void app_main()
 		const uint16_t MAX_SPEED = 4095;
 		uint16_t in_steering = RCControllerTask::getChannelState(0);
 		uint16_t in_throttle = RCControllerTask::getChannelState(1);
+
+		if((in_steering == 0) || (in_throttle == 0)) {
+			MotorL298NDriver::go(0, 0);
+			continue;
+		}
 
 		int16_t leftSpeed = map(in_throttle, 1000, 2000, -MAX_SPEED, MAX_SPEED);
 		int16_t rightSpeed = leftSpeed;
@@ -128,6 +151,6 @@ void app_main()
 			ArmController::parkArm();
 		}
 
-		vTaskDelay(200 / portTICK_RATE_MS);
+		delay_ms(200);
 	}
 }

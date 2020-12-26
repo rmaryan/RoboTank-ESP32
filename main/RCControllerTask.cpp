@@ -30,18 +30,12 @@ static const char* LOG_TAG = "RC";
 // the UART number to be used for the RC
 #define UART_NUM UART_NUM_1
 
-
-//uint8_t RCControllerTask::uart_buffer[BUFFER_SIZE];
 uint8_t RCControllerTask::state;
-//int64_t RCControllerTask::last;
 RCControllerTask::BUFFER_UNION RCControllerTask::buffer;
 uint8_t RCControllerTask::ptr;
-//uint8_t RCControllerTask::len;
 uint16_t RCControllerTask::channel[PROTOCOL_CHANNELS];
 uint16_t RCControllerTask::chksum;
-//uint8_t RCControllerTask::lchksum;
 xTaskHandle RCControllerTask::handle = NULL;
-//SemaphoreHandle_t RCControllerTask::channelSemaphore = NULL;
 
 void RCControllerTask::taskFunction() {
 	while (1) {
@@ -107,7 +101,7 @@ void RCControllerTask::init() {
 	rcUartConfig.rx_flow_ctrl_thresh = 120;
 
 	// Initialize the protocol state machine
-	state = STATE_SEARCHING_FOR_LENGTH;
+	state = STATE_DISCONNECTED;
 	ptr = 0;
 
 	if(uart_param_config(UART_NUM, &rcUartConfig)!=ESP_OK) {
@@ -129,17 +123,13 @@ void RCControllerTask::init() {
 		return;
 	}
 
-	// Creating binary semaphore to protect channel data list
-	//	channelSemaphore = xSemaphoreCreateMutex();
-	//	if(channelSemaphore == NULL) {
-	//		ESP_LOGE(LOG_TAG, "RC Module semaphore creation failed");
-	//		return;
-	//	}
+	state = STATE_SEARCHING_FOR_LENGTH;
 
 	// Start the listener task
 	xTaskCreate(taskfun, RC_TASK_NAME, TASK_STACK_SIZE, NULL, RC_CONTROLLER_PRIORITY, &handle);
 	if(handle == NULL ) {
 		ESP_LOGE(LOG_TAG, "RC Module task creation failed");
+		state = STATE_DISCONNECTED;
 		return;
 	}
 
@@ -149,24 +139,15 @@ void RCControllerTask::init() {
 void RCControllerTask::processBuffer() {
 	// update the channels only if CRC match
 	if(buffer.words[PROTOCOL_DATA_WORDS-1] == chksum) {
-		//		if( xSemaphoreTake(channelSemaphore, ( TickType_t ) 10 ) == pdTRUE ) {
 		for (uint8_t i = 0; i < PROTOCOL_CHANNELS; i++) {
 			channel[i] = buffer.words[i];
 		}
-		//			xSemaphoreGive(channelSemaphore);
-		//		}
 	}
 }
 
 uint16_t RCControllerTask::getChannelState(uint8_t channedID) {
-	if (channedID < PROTOCOL_CHANNELS) {
-		//		if( xSemaphoreTake(channelSemaphore, ( TickType_t ) 10 ) == pdTRUE ) {
-		uint16_t result = channel[channedID];
-		//			xSemaphoreGive(channelSemaphore);
-		return result;
-		//		} else {
-		//			return 0;
-		//		}
+	if ((channedID < PROTOCOL_CHANNELS) && (state != STATE_DISCONNECTED)) {
+		return channel[channedID];
 	} else {
 		return 0;
 	}

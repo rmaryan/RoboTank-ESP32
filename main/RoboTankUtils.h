@@ -21,7 +21,12 @@
 #ifndef MAIN_ROBOTANKUTILS_H_
 #define MAIN_ROBOTANKUTILS_H_
 
+#include <stdint.h>
+
 // Arduino map function port
 long map(long x, long in_min, long in_max, long out_min, long out_max);
+
+// Short-cut for the delay in milliseconds
+void delay_ms(uint32_t ms);
 
 #endif /* MAIN_ROBOTANKUTILS_H_ */

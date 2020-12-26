@@ -35,6 +35,7 @@ class RCControllerTask {
 private:
 	// Protocol parsing definitions
 	enum State {
+		STATE_DISCONNECTED,
 		STATE_SEARCHING_FOR_LENGTH,
 		STATE_SEARCHING_FOR_COMMAND,
 		STATE_FILLING_BUFFER,
@@ -55,23 +56,14 @@ private:
 	};
 	static BUFFER_UNION buffer;
 
-	//	static uint8_t uart_buffer[BUFFER_SIZE];
 	static uint8_t state;
-	//	static int64_t last;
 	// protocol buffer, excludes the leading 0x20 and 0x10
 	static uint8_t ptr;
-	//	static uint8_t len;
 	static uint16_t channel[PROTOCOL_CHANNELS];
 	static uint16_t chksum;
-	//	static uint8_t lchksum;
-
 
 	// Reference to the task created
 	static xTaskHandle handle;
-
-	// Internal semaphore to access buffers in a thread-safe way
-	// Let's assume that 16-bit int assignments are atomic
-	//static SemaphoreHandle_t channelSemaphore;
 
 	// The task code is here
 	static void taskFunction();
@@ -89,7 +81,8 @@ public:
 	// Returns the reference to the RC controller incoming messages buffer
 	static void init();
 
-	// get the current channel state
+	// Get the current channel state
+	// Returns 0 on any error or disconnected state
 	static uint16_t getChannelState(uint8_t channedID);
 };
 
