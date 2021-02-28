@@ -45,10 +45,10 @@ private:
 	static const uint8_t PROTOCOL_COMMAND40 = 0x40; // Command is always 0x40
 	static const uint8_t PROTOCOL_DATA_LENGTH = PROTOCOL_LENGTH - 2; // length of the protocol without the first 2 bytes header
 	static const uint8_t PROTOCOL_DATA_WORDS = PROTOCOL_DATA_LENGTH/2; // 2-byte words cound in the protocol data
-	static const uint8_t PROTOCOL_TIMEGAP = 3; // Packets are received very ~7ms so use ~half that for the gap
+	static const uint8_t PROTOCOL_TIMEGAP = 3; // Packets are received every ~7ms so use ~half that for the gap
 	static const uint8_t PROTOCOL_CHANNELS = 10;
 	static const uint16_t BUFFER_SIZE = 256;  // Size for the UART reading buffer
-	static const uint16_t TASK_STACK_SIZE = 2048;  // Size for the UART reading buffer
+	static const uint16_t TASK_STACK_SIZE = 2048;  // Size for the task
 
 	union BUFFER_UNION {
 		uint8_t  bytes[PROTOCOL_DATA_LENGTH];
@@ -78,7 +78,6 @@ private:
 	static void processBuffer();
 public:
 	// Launch the RC listening thread
-	// Returns the reference to the RC controller incoming messages buffer
 	static void init();
 
 	// Get the current channel state

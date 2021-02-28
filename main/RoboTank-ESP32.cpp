@@ -29,13 +29,14 @@
 #include <esp_spi_flash.h>
 #include "sdkconfig.h"
 #include "OTAManager.h"
-#include "pin_mapping.h"
 #include "PWMBoardController.h"
 #include "MotorL298NDriver.h"
 #include "SoundModuleController.h"
 #include "ArmController.h"
-#include "RCControllerTask.h"
 #include "LightsController.h"
+#include "SensorsController.h"
+#include "RCControllerTask.h"
+#include "AITask.h"
 #include "RoboTankUtils.h"
 
 #ifdef LOG_USE_WEB_FRONTEND
@@ -64,7 +65,6 @@ void app_main()
 	// Hello Sound!
 	SoundModuleController::init();
 	SoundModuleController::setVolume(7); // Max volume
-	SoundModuleController::playSound(3); // The hello sound ID
 
 	// PWM Board
 	PWMBoardController::init();
@@ -83,74 +83,13 @@ void app_main()
 	// Lights controller
 	LightsController::init();
 
-	// IR Sensors init
-	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_FL);
-	gpio_set_direction(PIN_PIN_ESP32_IR_FL, GPIO_MODE_INPUT);
-	gpio_set_pull_mode(PIN_PIN_ESP32_IR_FL, GPIO_PULLDOWN_ONLY);
-	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_FR);
-	gpio_set_direction(PIN_PIN_ESP32_IR_FR, GPIO_MODE_INPUT);
-	gpio_set_pull_mode(PIN_PIN_ESP32_IR_FR, GPIO_PULLDOWN_ONLY);
-	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_DL);
-	gpio_set_direction(PIN_PIN_ESP32_IR_DL, GPIO_MODE_INPUT);
-	gpio_set_pull_mode(PIN_PIN_ESP32_IR_DL, GPIO_PULLDOWN_ONLY);
-	gpio_pad_select_gpio(PIN_PIN_ESP32_IR_DR);
-	gpio_set_direction(PIN_PIN_ESP32_IR_DR, GPIO_MODE_INPUT);
-	gpio_set_pull_mode(PIN_PIN_ESP32_IR_DR, GPIO_PULLDOWN_ONLY);
+	// IR and Ultrasonic Sensors
+	SensorsController::init();
 
 	//RC Controller
 	RCControllerTask::init();
 
-	while(true)	{
-		// Quick and dirty RC for the motors and a hand
-		const uint16_t MAX_SPEED = 4095;
-		uint16_t in_steering = RCControllerTask::getChannelState(0);
-		uint16_t in_throttle = RCControllerTask::getChannelState(1);
-
-		if((in_steering == 0) || (in_throttle == 0)) {
-			MotorL298NDriver::go(0, 0);
-			continue;
-		}
-
-		int16_t leftSpeed = map(in_throttle, 1000, 2000, -MAX_SPEED, MAX_SPEED);
-		int16_t rightSpeed = leftSpeed;
-
-		int16_t turnRate = map(in_steering, 1000, 2000, MAX_SPEED, -MAX_SPEED);
-
-		leftSpeed += turnRate;
-		rightSpeed -= turnRate;
-
-		if(leftSpeed > MAX_SPEED) {
-			uint16_t delta = MAX_SPEED - leftSpeed;
-			leftSpeed -= delta;
-			rightSpeed += delta;
-		} else
-			if(rightSpeed > MAX_SPEED) {
-				uint16_t delta = MAX_SPEED - rightSpeed;
-				leftSpeed += delta;
-				rightSpeed -= delta;
-			}
-		MotorL298NDriver::go(leftSpeed, rightSpeed);
-
-		// hand is safeguarded by the channel 5
-		if(RCControllerTask::getChannelState(5) == 2000) {
-			// the arm servo is chosen by the channel 4
-			uint8_t servoID = 0;
-			switch (RCControllerTask::getChannelState(4)) {
-			case 1000:
-				servoID = 2;
-				break;
-			case 1500:
-				servoID = 1;
-				break;
-			}
-			uint16_t servoPosition = RCControllerTask::getChannelState(3);
-			if((servoPosition >1400) && (servoPosition < 1600)) servoPosition = 1500;
-			ArmController::turnServo(servoID, map(servoPosition, 1000, 2000, -10, +10));
-
-		} else {
-			ArmController::parkArm();
-		}
-
-		delay_ms(200);
-	}
+	//Launch of the AI. Wait 1 second for other modules to settle.
+	delay_ms(1000);
+	AITask::init();
 }

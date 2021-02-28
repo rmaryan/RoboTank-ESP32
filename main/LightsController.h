@@ -2,7 +2,7 @@
  * LightsController.h
  *
  * A class which manages all robots lights - head, rear, bottom RGB.
- * RGB code uses ESP32 DLED Controller library from  CalinRadoni.
+ * RGB code uses ESP32 DLED Controller library from  CalinRadoni (https://github.com/CalinRadoni/ESP32DLEDController)
  *
  * Copyright (c) 2021 Maryan Rachynskyy
  * This program is free software: you can redistribute it and/or modify

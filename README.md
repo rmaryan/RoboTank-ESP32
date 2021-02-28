@@ -2,13 +2,21 @@
 
 <table>
 <tr>
-    <td>This is a source code and schematics for the ESP32-based robot with the 6-servos manipulator.</td>
+    <td><H2>A source code and schematics for the ESP32-based robot with the 6-servos manipulator</H2></td>
 <td>
   <img src="schematics/robot.jpg">
 </td>
 </tr>
 </table>
 
+## Contents
+  * [Used Components](#used-components)
+  * [ESP IDF Requirements](#esp-idf-requirements)
+  * [Schematics](#schematics)
+  * [Remote Control](#remote-control)
+  * [Robot's Web Page and OTA](#robot-s-web-page-and-ota)
+  * [On-board sounds](#on-board-sounds)
+  * [3D Models](#3d-models)
 
 ## Used Components
 
@@ -31,6 +39,7 @@
   * [DC-DC Step Down Power Converter](https://www.banggood.com/DC-DC-CC-CV-Buck-Converter-Board-Step-Down-Power-Supply-Module-7-32V-to-0_8-28V-12A-p-1245047.html?p=M908156347868201609Y)
   * [Battery Management System 2S 7.4V 8A Peak Current 15A for 18650 Lithium Battery](https://www.banggood.com/2S-7_4V-8A-Peak-Current-15A-18650-Lithium-Battery-Protection-Board-With-Over-Charge-Protection-p-1259709.html?p=M908156347868201609Y) - 2x
   * [18650 Li-Ion Elements](https://www.banggood.com/4Pcs-INR18650-30Q-3000mAh-20A-Discharge-Current-18650-Power-Battery-Unprotected-Button-Top-18650-Battery-For-Flashlights-E-Cig-Tools-p-1067185.html?p=M908156347868201609Y) - 4x, make sure you've got at least 20A rated max output. Arm servos can be very power-hungry.
+  * [Geekcreit Green 0.28 Inch 2.6V-30V Mini Digital Voltmeter - 2x](https://www.banggood.com/5Pcs-Geekcreit-Green-0_28-Inch-2_6V-30V-Mini-Digital-Volt-Meter-Voltage-Tester-Voltmeter-p-980041.html?p=M908156347868201609Y)
 
 ## ESP IDF Requirements
 
@@ -38,6 +47,32 @@ This project relies on the features introduced in ESP IDF version 4.1. Make sure
 
 ## Schematics
 ![Schematics](schematics/RoboTank-ESP32.png)
+
+## Remote Control
+
+We use Flysky FS-i6 a 2.4GHz 6-channel transmitter which is absolutely sufficient for our case. 
+
+The functionality was expanded with the alternative firmware version from this source: [https://github.com/qba667/FlySkyI6](https://github.com/qba667/FlySkyI6). The number of channels increased to 14 (we use 10 though). Also there are numerous functionality and ui improvements.
+
+To access all channels at the robot's side, RC receiver is connected using iBus digital interface. Anyway it is more natural for the microcontroller-based projects, though require some processing power to read the messages stream and decode RC switches and gimbals positions.
+
+### Flysky FS-i6 Layout
+
+![Flysky FS-i6 Controls](schematics/FS-i6_controls.png)
+
+### RC Channels Mapping
+
+| RC Transmitter Switch | Channel # | Function |
+| :--- | :---: | :--- |
+| Left Gimbal | 3 and 4 | Controls the arm servos (depends on SWC position) |
+| Right Gimbal | 1 and 2 | Controls the chassis motors |
+| SWA | 5 | **Remote control activation** <br/>UP - Remote Control is active<br/>DOWN - Remote Control is inactive<br/>*After power on or reconnect, switch SWA down then up to activate RC. For the safety reasons all remote commands will be ignored until such initial activation sequence take place.* |
+| SWB | 6 | **AI mode activation**<br/>UP - manual control mode<br/>DOWN - AI control mode (RC should still be activated first) |
+| VRA | 7 | *nothing at the moment* |
+| VRA | 8 | *nothing at the moment* |
+| SWC | 9 | **Arm sevos pair selection**<br/> Selects which pair of servos are going to be controlled by the left gimbal (1=>top, 2=>middle, 3=>bottom) |
+| SWD | 10 | **Lights Toggle**<br/>UP - all lights ON<br/>DOWN - all lights OFF |
+
 
 ## Robot's Web Page and OTA
 
@@ -63,3 +98,11 @@ Tracks are the following:
   * 0006.AD4 - Vivaldi - Winter
 
 Files were converted from the original MP3's as described here: https://www.buildcircuit.com/how-to-convert-mp3-and-wav-files-to-ad4-format-wtv020sd-tutorial/
+
+## 3D Models
+
+Some of the parts were 3D-printed. Corresponding FreeCAD and STL files are provided in the [schematics/3D Models](schematics/3D%20Models) folder.
+
+  * RC Antenna cradle
+  * IR distance sensors consoles
+  * Backside voltmeters cradles
