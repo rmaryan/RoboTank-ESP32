@@ -19,7 +19,7 @@
 
 #include "AITask.h"
 
-#include <esp_log.h>
+#include "esp_log.h"
 static const char* LOG_TAG = "AI";
 
 #include "MotorL298NDriver.h"
@@ -27,18 +27,28 @@ static const char* LOG_TAG = "AI";
 #include "ArmController.h"
 #include "RCControllerTask.h"
 #include "LightsController.h"
+#include "SensorsController.h"
 #include "RoboTankUtils.h"
 
 // task definitions for FreeRTOS
 #define AI_TASK_NAME "AI_TASK"
-#define AI_TASK_PRIORITY 5
-#define TASK_STACK_SIZE 512
+#define AI_TASK_PRIORITY 7
+#define TASK_STACK_SIZE 2048
 
 xTaskHandle AITask::handle = NULL;
 
 void AITask::AItaskFunction() {
 	while(true)	{
-		//FIXME Quick and dirty RC code for the motors and a hand. To be completed.
+		// FIXME This is a temporary sensors debuging code
+		SensorsStateStruct sensorsState;
+		SensorsController::getSensorsState(sensorsState);
+
+		ESP_LOGI(LOG_TAG, "Sensors: FR=%d, FL=%d, DR=%d, DL=%d, US=%d",
+				sensorsState.ir_fr, sensorsState.ir_fl,
+				sensorsState.ir_dr, sensorsState.ir_dl,
+				sensorsState.us_forward);
+		delay_ms(2000);
+/*		//FIXME Quick and dirty RC code for the motors and a hand. To be completed.
 		const uint16_t MAX_SPEED = 4095;
 		uint16_t in_steering = RCControllerTask::getChannelState(0);
 		uint16_t in_throttle = RCControllerTask::getChannelState(1);
@@ -89,6 +99,7 @@ void AITask::AItaskFunction() {
 		}
 
 		delay_ms(200);
+		*/
 	}
 }
 

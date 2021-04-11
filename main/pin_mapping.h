@@ -23,7 +23,7 @@
 #ifndef PIN_MAPPING_H_
 #define PIN_MAPPING_H_
 
-#include <driver/gpio.h>
+#include "driver/gpio.h"
 
 /* ESP32 Pins */
 /*============*/
@@ -44,14 +44,14 @@
 #define PIN_PIN_ESP32_RGB_RIGHT GPIO_NUM_33
 
 // ulstrasonic distance sensor pins
-#define PIN_PIN_ESP32_US_TRIG GPIO_NUM_34
+#define PIN_PIN_ESP32_US_TRIG GPIO_NUM_22
 #define PIN_PIN_ESP32_US_ECHO GPIO_NUM_35
 
 // Infrared obstacle detectors pins
 #define PIN_PIN_ESP32_IR_FL GPIO_NUM_18
-#define PIN_PIN_ESP32_IR_FR GPIO_NUM_17
+#define PIN_PIN_ESP32_IR_FR GPIO_NUM_5
 #define PIN_PIN_ESP32_IR_DL GPIO_NUM_19
-#define PIN_PIN_ESP32_IR_DR GPIO_NUM_5
+#define PIN_PIN_ESP32_IR_DR GPIO_NUM_17
 
 
 /* PWM Multiplexer pins (PCA9685 board) */

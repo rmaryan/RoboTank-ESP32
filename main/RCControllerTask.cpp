@@ -19,14 +19,17 @@
 
 #include "RCControllerTask.h"
 
-#include <esp_log.h>
+#include "esp_log.h"
 static const char* LOG_TAG = "RC";
 
 #include "driver/uart.h"
 #include "pin_mapping.h"
 
-// task name for FreeRTOS
+// task parameters for FreeRTOS
 #define RC_TASK_NAME "RC_CONTROLLER"
+#define RC_CONTROLLER_PRIORITY 5
+#define TASK_STACK_SIZE 2048
+
 // the UART number to be used for the RC
 #define UART_NUM UART_NUM_1
 

@@ -20,17 +20,24 @@
 #include "OTAManager.h"
 
 #include <sys/param.h>
-#include <esp_system.h>
-#include <esp_wifi.h>
-#include <esp_log.h>
-#include <nvs_flash.h>
-#include <esp_ota_ops.h>
+
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "esp_ota_ops.h"
+
+#include "nvs_flash.h"
+#include "esp_netif.h"
+#include "esp_eth.h"
 
 #ifdef LOG_USE_WEB_FRONTEND
 #include "BufLogger.h"
 #endif
 
 #define REBOOT_TASK_NAME "REBOOT_TASK"
+#define REBOOT_TASK_PRIORITY 5
+#define TASK_STACK_SIZE 2048
 #define RECONNECT_RETRY_MAX 10
 
 // Embedded Files. To add or remove make changes is component.mk file as well.
@@ -45,33 +52,33 @@ EventGroupHandle_t OTAManager::reboot_event_group;
 uint8_t OTAManager::s_retry_num;
 httpd_handle_t OTAManager::server;
 int8_t OTAManager::flash_status;
-httpd_uri_t OTAManager::http_index_html_struct  = {
+httpd_uri_t OTAManager::http_index_html_struct  = { // @suppress("Invalid arguments")
 		.uri = "/",
-		.method = HTTP_GET,
+		.method = HTTP_GET,                         // @suppress("Symbol is not resolved")
 		.handler = http_index_html_handler,
 		.user_ctx = NULL
 };
-httpd_uri_t OTAManager::http_favicon_png_struct = {
+httpd_uri_t OTAManager::http_favicon_png_struct = { // @suppress("Invalid arguments")
 		.uri = "/favicon.png",
-		.method = HTTP_GET,
+		.method = HTTP_GET,                         // @suppress("Symbol is not resolved")
 		.handler = http_favicon_png_handler,
 		.user_ctx = NULL
 };
-httpd_uri_t OTAManager::http_update_struct = {
+httpd_uri_t OTAManager::http_update_struct = { // @suppress("Invalid arguments")
 		.uri = "/update",
-		.method = HTTP_POST,
+		.method = HTTP_POST,                   // @suppress("Symbol is not resolved")
 		.handler = http_update_post_handler,
 		.user_ctx = NULL
 };
-httpd_uri_t OTAManager::http_status_struct = {
+httpd_uri_t OTAManager::http_status_struct = { // @suppress("Invalid arguments")
 		.uri = "/status",
-		.method = HTTP_POST,
+		.method = HTTP_POST,                   // @suppress("Symbol is not resolved")
 		.handler = http_update_status_handler,
 		.user_ctx = NULL
 };
-httpd_uri_t OTAManager::http_logs_struct = {
+httpd_uri_t OTAManager::http_logs_struct = { // @suppress("Invalid arguments")
 		.uri = "/logs",
-		.method = HTTP_GET,
+		.method = HTTP_GET,                  // @suppress("Symbol is not resolved")
 		.handler = http_update_logs_handler,
 		.user_ctx = NULL
 };
@@ -89,7 +96,7 @@ void OTAManager::init() {
 	esp_log_level_set("wifi", ESP_LOG_NONE);     // disable wifi driver logging
 
 	// Need this task to spin up, see why in task
-	xTaskCreate(systemRebootWrapper, REBOOT_TASK_NAME, 2048, NULL, 5, NULL);
+	xTaskCreate(systemRebootWrapper, REBOOT_TASK_NAME, TASK_STACK_SIZE, NULL, REBOOT_TASK_PRIORITY, NULL);
 
 	// Initialize the WiFi connection and HTTP server
 	server = NULL;

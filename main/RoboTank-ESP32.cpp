@@ -22,11 +22,11 @@
  */
 
 #include <stdio.h>
-#include <esp_log.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <esp_system.h>
-#include <esp_spi_flash.h>
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
+#include "esp_spi_flash.h"
 #include "sdkconfig.h"
 #include "OTAManager.h"
 #include "PWMBoardController.h"
@@ -64,7 +64,6 @@ void app_main()
 
 	// Hello Sound!
 	SoundModuleController::init();
-	SoundModuleController::setVolume(7); // Max volume
 
 	// PWM Board
 	PWMBoardController::init();

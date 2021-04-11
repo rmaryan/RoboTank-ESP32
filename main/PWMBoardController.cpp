@@ -19,8 +19,8 @@
 
 #include "PWMBoardController.h"
 
-#include <driver/i2c.h>
-#include <esp_log.h>
+#include "driver/i2c.h"
+#include "esp_log.h"
 #include "pin_mapping.h"
 
 // Board-specific definitions

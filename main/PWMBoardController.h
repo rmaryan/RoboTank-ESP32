@@ -25,8 +25,8 @@
 #define MAIN_PWMBOARDCONTROLLER_H_
 
 #include <stdint.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 class PWMBoardController {
 public:

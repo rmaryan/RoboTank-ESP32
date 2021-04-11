@@ -23,7 +23,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "pin_mapping.h"
-#include <driver/gpio.h>
+#include "driver/gpio.h"
 
 static const char* LOG_TAG = "SND";
 
@@ -66,6 +66,7 @@ void SoundModuleController::init() {
 	gpio_set_level(PIN_PIN_ESP32_SOUND_P04_CLK, 1);
 	gpio_set_level(PIN_PIN_ESP32_SOUND_P05_DI, 1);
 	vTaskDelay(300 / portTICK_RATE_MS);
+	SoundModuleController::setVolume(7);
 	ESP_LOGI(LOG_TAG, "Sound Module kicked-off");
 }
 

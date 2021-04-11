@@ -31,9 +31,9 @@
 //#define SERVO_CALIBRATION_MODE 1
 
 #include <stdint.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/timers.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/timers.h"
 
 #include "pin_mapping.h"
 

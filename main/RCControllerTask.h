@@ -28,9 +28,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-// RC Controller task priority. Must be less than configMAX_PRIORITIES
-#define RC_CONTROLLER_PRIORITY 5
-
 class RCControllerTask {
 private:
 	// Protocol parsing definitions
@@ -48,7 +45,6 @@ private:
 	static const uint8_t PROTOCOL_TIMEGAP = 3; // Packets are received every ~7ms so use ~half that for the gap
 	static const uint8_t PROTOCOL_CHANNELS = 10;
 	static const uint16_t BUFFER_SIZE = 256;  // Size for the UART reading buffer
-	static const uint16_t TASK_STACK_SIZE = 2048;  // Size for the task
 
 	union BUFFER_UNION {
 		uint8_t  bytes[PROTOCOL_DATA_LENGTH];
