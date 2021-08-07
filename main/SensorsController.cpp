@@ -141,30 +141,34 @@ void SensorsController::sensorsTaskFunction() {
 	rmt_rx_start(RMT_RX_CHANNEL, true);
 	ESP_LOGI(LOG_TAG, "Sensors task engaging");
 	while (true) {
+		rmt_item32_t *rxItem;
+		// wipe all items in the buffer (most probably - noise)
+		while(true) {
+			rxItem = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 0); // no wait
+			if(rxItem != NULL) {
+				vRingbufferReturnItem(rb, (void*) rxItem);
+			} else {
+				break;
+			}
+		}
+
 		// send the trigger signal
 		if (rmt_write_items(RMT_TX_CHANNEL, &triggerRMTItem, 1, true) != ESP_OK) {
 			ESP_LOGE(LOG_TAG, "rmt_write_items failed");
+			continue;
 		}
 		// wait for the sending completion
 		if (rmt_wait_tx_done(RMT_TX_CHANNEL, portMAX_DELAY) != ESP_OK) {
 			ESP_LOGE(LOG_TAG, "rmt_wait_tx_done failed");
+			continue;
 		}
 
-		rmt_item32_t *rxItem = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size,
+		rxItem = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size,
 				pdMS_TO_TICKS(200));
 
 		if (rxItem != NULL) {
 			lastUSEchoDuration = rxItem->duration0;
 			vRingbufferReturnItem(rb, (void*) rxItem);
-			// wipe all the remaining items in the buffer (most probably - noise)
-			while(true) {
-				rxItem = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 0); // no wait
-				if(rxItem != NULL) {
-					vRingbufferReturnItem(rb, (void*) rxItem);
-				} else {
-					break;
-				}
-			}
 		} else {
 			lastUSEchoDuration = 0;
 		}

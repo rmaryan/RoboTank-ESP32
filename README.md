@@ -60,7 +60,7 @@ To access all channels at the robot's side, RC receiver is connected using iBus 
 
 ![Flysky FS-i6 Controls](schematics/FS-i6_controls.png)
 
-### RC Channels Mapping
+### RC Channels Mapping and Flow Chart
 
 | RC Transmitter Switch | Channel # | Function |
 | :--- | :---: | :--- |
@@ -69,10 +69,11 @@ To access all channels at the robot's side, RC receiver is connected using iBus 
 | SWA | 5 | **Remote control activation** <br/>UP - Remote Control is active<br/>DOWN - Remote Control is inactive<br/>*After power on or reconnect, switch SWA down then up to activate RC. For the safety reasons all remote commands will be ignored until such initial activation sequence take place.* |
 | SWB | 6 | **AI mode activation**<br/>UP - manual control mode<br/>DOWN - AI control mode (RC should still be activated first) |
 | VRA | 7 | *nothing at the moment* |
-| VRA | 8 | *nothing at the moment* |
+| VRB | 8 | *nothing at the moment* |
 | SWC | 9 | **Arm sevos pair selection**<br/> Selects which pair of servos are going to be controlled by the left gimbal (1=>top, 2=>middle, 3=>bottom) |
 | SWD | 10 | **Lights Toggle**<br/>UP - all lights ON<br/>DOWN - all lights OFF |
 
+![RC Flow Chart](schematics/RC flow chart.png)
 
 ## Robot's Web Page and OTA
 

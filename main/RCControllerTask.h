@@ -73,6 +73,18 @@ private:
 	// if the checksum is OK - the channels data is populated with the parsed values
 	static void processBuffer();
 public:
+	// RC control channels mapping
+	static const uint8_t RC_RG_H = 0; // Right gimbal horizontal axis
+	static const uint8_t RC_RG_V = 1; // Right gimbal vertical axis
+	static const uint8_t RC_LG_H = 2; // Left gimbal horizontal axis
+	static const uint8_t RC_LG_V = 3; // Left gimbal vertical axis
+	static const uint8_t RC_SWA = 4;
+	static const uint8_t RC_SWB = 5;
+	static const uint8_t RC_VRA = 6;
+	static const uint8_t RC_VRB = 7;
+	static const uint8_t RC_SWC = 8;
+	static const uint8_t RC_SWD = 9;
+
 	// Launch the RC listening thread
 	static void init();
 

@@ -25,18 +25,35 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+enum AI_STATE {AI_STATE_IDLE, AI_STATE_RC_PRE, AI_STATE_RC};
+
 class AITask {
 private:
+	static AI_STATE ai_mode;
+
 	// Reference to the task created
 	static xTaskHandle handle;
 
+	// Variables for the RGB lights animation
+	static uint8_t rgbColor[3];
+	static uint8_t increasingColor;
+	static uint8_t decreasingColor;
+
 	// The task code is here
 	static void AItaskFunction();
+	static void processTickAI();
+	static void processTickRC();
 
 	// Wrapper for the xTaskCreate parameter
 	static void AItaskfun(void* parm) {
 		static_cast<AITask *>(parm)->AItaskFunction();
 	}
+
+	// the helper method which calculates the servo rotations speed depending on the RC gimbal position
+	static int16_t calcServoSpeed(uint16_t channelState);
+
+	// the helper method which animates the RGB lights and pushes changes to the Lights Controller
+	static void animateRGB();
 
 public:
 	// Launch the AI thread
