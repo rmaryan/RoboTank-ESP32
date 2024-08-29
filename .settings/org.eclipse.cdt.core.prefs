@@ -1,0 +1,17 @@
+doxygen/doxygen_new_line_after_brief=true
+doxygen/doxygen_use_brief_tag=false
+doxygen/doxygen_use_javadoc_tags=true
+doxygen/doxygen_use_pre_tag=false
+doxygen/doxygen_use_structural_commands=false
+eclipse.preferences.version=1
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/IDF_CCACHE_ENABLE/delimiter=;
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/IDF_CCACHE_ENABLE/operation=replace
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/IDF_CCACHE_ENABLE/value=1
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/IDF_PYTHON_ENV_PATH/delimiter=;
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/IDF_PYTHON_ENV_PATH/operation=replace
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/IDF_PYTHON_ENV_PATH/value=D\:\\arduino\\.espressif\\python_env\\idf4.0_py3.8_env
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/OPENOCD_SCRIPTS/delimiter=;
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/OPENOCD_SCRIPTS/operation=replace
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/OPENOCD_SCRIPTS/value=D\:\\arduino\\.espressif\\tools\\openocd-esp32\\v0.10.0-esp32-20190313\\openocd-esp32\\share\\openocd\\scripts
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/append=true
+environment/project/cdt.managedbuild.toolchain.gnu.cross.base.59438382/appendContributed=true
