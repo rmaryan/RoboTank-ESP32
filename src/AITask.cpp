@@ -19,8 +19,8 @@
 
 #include "AITask.h"
 
-#include "esp_log.h"
-static const char *LOG_TAG = "AI";
+#include "rtank_esp_log.h"
+static const char *LOG_TAG = LOG_TAG_AI;
 
 #include "MotorL298NDriver.h"
 #include "SoundModuleController.h"
@@ -29,6 +29,7 @@ static const char *LOG_TAG = "AI";
 #include "LightsController.h"
 #include "SensorsController.h"
 #include "RoboTankUtils.h"
+#include <esp_timer.h>
 
 // task definitions for FreeRTOS
 #define AI_TASK_NAME "AI_TASK"
@@ -56,18 +57,37 @@ void AITask::AItaskFunction()
 	// This method implements the RC flow chart as specified in the README.md
 	while (true)
 	{
+		#ifdef RC_DEBUG_ENABLED
+		static uint32_t lastDebugTime = 0;
+		uint32_t currentTime = esp_timer_get_time() / 1000;
+		if (currentTime - lastDebugTime >= 1000)
+		{
+			lastDebugTime = currentTime;
+			ESP_LOGI(LOG_TAG, "RC Channels: 0=%d 1=%d 2=%d 3=%d 4=%d 5=%d 6=%d 7=%d 8=%d 9=%d",
+					 RCControllerTask::getChannelAnalogState(0),
+					 RCControllerTask::getChannelAnalogState(1),
+					 RCControllerTask::getChannelAnalogState(2),
+					 RCControllerTask::getChannelAnalogState(3),
+					 RCControllerTask::getChannelAnalogState(4),
+					 RCControllerTask::getChannelAnalogState(5),
+					 RCControllerTask::getChannelAnalogState(6),
+					 RCControllerTask::getChannelAnalogState(7),
+					 RCControllerTask::getChannelAnalogState(8),
+					 RCControllerTask::getChannelAnalogState(9));
+		}
+		#endif	
+		
 		switch (ai_mode)
 		{
 
 		case AI_STATE_IDLE:
-			// In idle mode robot just waits for one of the other modes activation
-			// Transition to the other mode is activated by switching SWA down
+			// In idle mode robot just waits for the preheat mode activation by switching SWA down
 
 			if (RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWA) == RCControllerTask::SW_DOWN)
 			{
 				SoundModuleController::playSound(0);
-				ai_mode = AI_STATE_RC_PRE;
-				ESP_LOGI(LOG_TAG, "Activating the robot AI: preheat");
+				ai_mode = AI_STATE_PREHEAT;
+				ESP_LOGI(LOG_TAG, "preheat mode activated");
 				delay_ms(1000);
 			}
 			else
@@ -76,32 +96,38 @@ void AITask::AItaskFunction()
 			}
 			break;
 
-		case AI_STATE_RC_PRE:
+		case AI_STATE_PREHEAT:
 			// This mode is activated when SWA switch was turned down
-			// Waiting for the SWA to return back up
-			// Then - the robot is switched either to the RC mode
+			// Waiting for the SWA to return back up to arm the robot
+			// We use a two-staged approach to avoid accidental arming
 
 			if (RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWA) == RCControllerTask::SW_UP)
 			{
-				ai_mode = AI_STATE_RC;
+				ai_mode = AI_STATE_ARMED;
 				SoundModuleController::playSound(1);
-				ESP_LOGI(LOG_TAG, "Activating the robot AI: RC mode");
+				ESP_LOGI(LOG_TAG, "ARMED");
 				delay_ms(1000);
 			}
 
 			delay_ms(500);
 			break;
 
-		case AI_STATE_RC:
-			// In this mode the robot is controlled by the remote control
+		case AI_STATE_ARMED:
+			// In this mode the robot will be responding to the RC commands
 			// This mode can be deactivated by turning SWA down (or if the RC connection was lost)
-			if (!RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWA) == RCControllerTask::SW_UP)
+			if (RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWA) != RCControllerTask::SW_UP)
 			{
-				ai_mode = AI_STATE_IDLE;
+				ai_mode = AI_STATE_PREHEAT;
+				// emergency stop the robot
+				MotorL298NDriver::go(0, 0); // stop the motors
+				SoundModuleController::playSound(2); // disarm sound
+				ESP_LOGI(LOG_TAG, "disarmed");
 				break;
 			}
 
-			// Should we follow the RC commands or act independently?
+			// If robot is armed, it will act according to the SWE switch position
+			// If SWE pushed - AI mode is active
+			// If SWE is not pushed - RC mode is active
 			if (RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWE) == RCControllerTask::SW_DOWN)
 			{
 				processTickAI();
@@ -111,7 +137,7 @@ void AITask::AItaskFunction()
 				processTickRC();
 			}
 
-			delay_ms(200);
+			vTaskDelay(pdMS_TO_TICKS(200));
 			break;
 		}
 	}
@@ -120,7 +146,7 @@ void AITask::AItaskFunction()
 void AITask::processTickAI()
 {
 	// TODO The AI mode code will be implemented here
-	// At this point - just part the arm
+	// At this point - just park the arm
 	// Later - a smooth transition between the RC and AI modes should be implemented
 	ArmController::parkArm();
 }
@@ -135,6 +161,7 @@ void AITask::processTickRC()
 
 	if ((in_steering == 0) || (in_throttle == 0))
 	{
+		// connection lost just keep the robot stable indefinitely
 		MotorL298NDriver::go(0, 0);
 	}
 	else
@@ -164,7 +191,7 @@ void AITask::processTickRC()
 		MotorL298NDriver::go(leftSpeed, rightSpeed);
 	}
 
-	// change the hand position if needed
+	// change the arm position if needed
 	// Get the state of the SWC - it selects the level of servos to be changed
 	uint8_t servoLowerID = 0;
 	uint8_t servoUpperID = 0;
@@ -193,7 +220,7 @@ void AITask::processTickRC()
 								 RCControllerTask::getChannelAnalogState(
 									 RCControllerTask::RC_LG_V)));
 
-	// Control the lights with the channel 6 switch (SWB)
+	// Control the lights with the channel #5 switch (SWB)
 	if ((RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWB) == RCControllerTask::SW_MID) && (currentLightsMode !=2))
 	{
 		LightsController::lightsON(LightsController::LIGHTS_BOTH);

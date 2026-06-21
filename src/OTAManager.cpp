@@ -23,7 +23,7 @@
 
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_log.h"
+#include "rtank_esp_log.h"
 #include "nvs_flash.h"
 #include "esp_ota_ops.h"
 
@@ -46,7 +46,7 @@ extern const uint8_t index_html_end[]   asm("_binary_index_html_end");
 extern const uint8_t favicon_png_start[] asm("_binary_favicon_png_start");
 extern const uint8_t favicon_png_end[]   asm("_binary_favicon_png_end");
 
-static const char* LOG_TAG = "OTA";
+static const char* LOG_TAG = LOG_TAG_OTA;
 
 EventGroupHandle_t OTAManager::reboot_event_group;
 uint8_t OTAManager::s_retry_num;

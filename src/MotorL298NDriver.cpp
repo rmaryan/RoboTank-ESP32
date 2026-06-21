@@ -18,8 +18,8 @@
 
 #include "MotorL298NDriver.h"
 
-#include "esp_log.h"
-static const char *LOG_TAG = "MTR";
+#include "rtank_esp_log.h"
+static const char *LOG_TAG = LOG_TAG_MTR;
 
 
 #include "driver/gpio.h"

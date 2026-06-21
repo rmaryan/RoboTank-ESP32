@@ -31,7 +31,7 @@
 #define RC_CHANNEL_UP 1000
 #define RC_CHANNEL_MID 1500
 #define RC_CHANNEL_DOWN 2000
-#define RC_CHANNEL_DZ 20
+#define RC_CHANNEL_HALF_STEP 250
 
 class RCControllerTask {
 private:

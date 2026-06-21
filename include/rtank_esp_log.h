@@ -1,7 +1,7 @@
 /*
- * RoboTankUtils.h
+ * rtank_esp_log.h
  *
- * Utility functions used widely in the project.
+ * Custom settings for the ESP log subsystem for RoboTank-ESP32 project.
  *
  * Copyright (c) 2025 Maryan Rachynskyy
  * This program is free software: you can redistribute it and/or modify
@@ -16,24 +16,24 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
+#ifndef RTANK_ESP_LOG_H
+#define RTANK_ESP_LOG_H
 
-#ifndef MAIN_ROBOTANKUTILS_H_
-#define MAIN_ROBOTANKUTILS_H_
+#include "esp_log.h"
 
-#include <stdint.h>
+#define LOG_TAG_AI    "AI"
+#define LOG_TAG_ARM   "ARM"
+#define LOG_TAG_BLOG  "BLOG"
+#define LOG_TAG_LED   "LED"
+#define LOG_TAG_MTR   "MTR"
+#define LOG_TAG_OTA   "OTA"
+#define LOG_TAG_PWM   "PWM"
+#define LOG_TAG_RC    "RC"
+#define LOG_TAG_ROOT  "ROOT"
+#define LOG_TAG_SENS  "SENS"
+#define LOG_TAG_SND   "SND"
 
-// Arduino map function port
-long map(long x, long in_min, long in_max, long out_min, long out_max);
 
-// Short-cut for the delay in milliseconds
-void delay_ms(uint32_t ms);
-
-// Ported from Arduino
-void delay_mks(uint32_t us);
-
-// Initialize the logging subsystem with default log levels
-// Edit this function if different levels of the logging are required
-void rtank_esp_log_init();
-
-#endif /* MAIN_ROBOTANKUTILS_H_ */
+#endif // RTANK_ESP_LOG_H

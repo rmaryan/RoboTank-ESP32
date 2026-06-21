@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "esp_log.h"
+#include "rtank_esp_log.h"
 #include "ArmController.h"
 #include "PWMBoardController.h"
 #include "RoboTankUtils.h"
@@ -34,9 +34,9 @@ const uint8_t ArmController::SERVO_PWM_PORTS[SERVOS_COUNT] = {
 		PIN_PWM_ARM_SERVO5
 };
 
-const uint8_t ArmController::SERVO_MIN_DEG[SERVOS_COUNT] = 	 {2,   15,  10,  30,  10,  45};
+const uint8_t ArmController::SERVO_MIN_DEG[SERVOS_COUNT] = 	 {0,   15,  10,  30,  10,  45};
 const uint8_t ArmController::SERVO_MAX_DEG[SERVOS_COUNT] =   {178, 165, 180, 170, 170, 85};
-const uint8_t ArmController::SERVO_PARK_DEG[SERVOS_COUNT] =  {90,  20,  10,  50,  90,  71}; // arm parking positions. Set 255 to skip
+const uint8_t ArmController::SERVO_PARK_DEG[SERVOS_COUNT] =  {85,  20,  10,  50,  90,  71}; // arm parking positions. Set 255 to skip
 
 uint16_t ArmController::servo_current_position[SERVOS_COUNT] = {};
 int16_t  ArmController::servo_current_speed[SERVOS_COUNT] = {};
@@ -46,7 +46,7 @@ uint8_t ArmController::servo_target_positionDEG[SERVOS_COUNT] =  {};
 #define SERVO_TIMER_TASK_NAME "SERVO TIMER"
 TimerHandle_t ArmController::xServoUpdateTimerHandle;
 
-static const char* LOG_TAG = "ARM";
+static const char* LOG_TAG = LOG_TAG_ARM;
 
 void ArmController::init() {
 	// Make sure the arm is initialized in the parked position
@@ -78,8 +78,9 @@ void ArmController::init() {
 	}
 }
 
-void ArmController::turnServo(uint8_t servoID, int16_t turningAngleDEG) {
-	if(servoID < SERVOS_COUNT) {
+void ArmController::turnServo(uint8_t servoID, int16_t turningAngleDEG) {	
+	if((servoID < SERVOS_COUNT) && (turningAngleDEG != 0)) {
+		ESP_LOGI(LOG_TAG, "Turning servo %d by %d degrees", servoID, turningAngleDEG);
 		int16_t desiredPositionDEG = servo_target_positionDEG[servoID] + turningAngleDEG;
 		if(desiredPositionDEG< SERVO_MIN_DEG[servoID])
 			desiredPositionDEG = SERVO_MIN_DEG[servoID];

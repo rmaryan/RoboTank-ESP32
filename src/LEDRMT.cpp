@@ -21,7 +21,7 @@
 
 #include "LEDRMT.h"
 #include <string.h>
-#include "esp_log.h"
+#include "rtank_esp_log.h"
 #include "driver/rmt_tx.h"
 #include "driver/rmt_types.h"
 #include "freertos/FreeRTOS.h"
@@ -30,7 +30,7 @@
 #define LED_STRIP_RMT_MEM_BLOCK_SYMBOLS 64
 #define LED_STRIP_RMT_TICK_DUR 100
 
-static const char* TAG = "LedStripController";
+static const char* LOG_TAG = LOG_TAG_LED;
 
 // WS2812 timing (in ns)
 #define T0H_NS  400

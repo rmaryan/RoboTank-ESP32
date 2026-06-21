@@ -25,7 +25,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-enum AI_STATE {AI_STATE_IDLE, AI_STATE_RC_PRE, AI_STATE_RC};
+// if defined, debug messages with the RC channels state will be printed from the AI task each second
+//// #define RC_DEBUG_ENABLED
+
+enum AI_STATE {AI_STATE_IDLE, AI_STATE_PREHEAT, AI_STATE_ARMED};
 
 class AITask {
 private:

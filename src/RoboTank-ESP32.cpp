@@ -21,7 +21,7 @@
  *
  */
 
-#include "esp_log.h"
+#include "rtank_esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "OTAManager.h"
@@ -39,7 +39,7 @@
 #include "BufLogger.h"
 #endif
 
-static const char* LOG_TAG = "ROOT";
+static const char* LOG_TAG = LOG_TAG_ROOT;
 
 extern "C" {
 void app_main();
@@ -47,6 +47,10 @@ void app_main();
 
 void app_main()
 {
+	// Initialize the logging subsystem
+	// It allows selecting different log levels for each module
+	rtank_esp_log_init();
+
 	// Initialize the web front-end logger
 #ifdef LOG_USE_WEB_FRONTEND
 	BufLogger::init();

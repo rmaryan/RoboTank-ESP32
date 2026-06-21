@@ -19,10 +19,8 @@
 
 #include "RCControllerTask.h"
 
-#include "esp_log.h"
-static const char* LOG_TAG = "RC";
-
-#define RC_CHANNEL_HALF_STEP 250
+#include "rtank_esp_log.h"
+static const char* LOG_TAG = LOG_TAG_RC;
 
 #include "driver/uart.h"
 #include "pin_mapping.h"
@@ -34,7 +32,7 @@ static const char* LOG_TAG = "RC";
 #define TASK_STACK_SIZE 2048
 
 // the UART number to be used for the RC
-#define UART_NUM UART_NUM_1
+#define RC_UART_NUM UART_NUM_1
 
 uint8_t RCControllerTask::state;
 RCControllerTask::BUFFER_UNION RCControllerTask::buffer;
@@ -47,11 +45,11 @@ TaskHandle_t RCControllerTask::handle = NULL;
 void RCControllerTask::taskFunction() {
 	while (1) {
 		size_t bufferLength = 0;
-		ESP_ERROR_CHECK(uart_get_buffered_data_len(UART_NUM, &bufferLength));
+		ESP_ERROR_CHECK(uart_get_buffered_data_len(RC_UART_NUM, &bufferLength));
 		
 		if(bufferLength > 0) {
 			uint8_t value = 0;
-			if(uart_read_bytes(UART_NUM, &value, 1, 0) > 0) {				
+			if(uart_read_bytes(RC_UART_NUM, &value, 1, 0) > 0) {				
 				switch (state) {
 				case STATE_SEARCHING_FOR_LENGTH:
 					if(value == PROTOCOL_LENGTH) {
@@ -92,7 +90,7 @@ void RCControllerTask::taskFunction() {
 			}
 		} else {
 			// the buffer is empty - let's wait a bit
-			delayMicros(1000 * PROTOCOL_TIMEGAP);
+			delay_ms(PROTOCOL_TIMEGAP);
 		}
 	}
 }
@@ -114,12 +112,12 @@ void RCControllerTask::init(uint8_t deadZoneValue) {
 	state = STATE_DISCONNECTED;
 	ptr = 0;
 
-	if(uart_param_config(UART_NUM, &rcUartConfig)!=ESP_OK) {
+	if(uart_param_config(RC_UART_NUM, &rcUartConfig)!=ESP_OK) {
 		ESP_LOGE(LOG_TAG, "RC Module UART configuration failed");
 		return;
 	}
 
-	if(uart_set_pin(UART_NUM,
+	if(uart_set_pin(RC_UART_NUM,
 			0, // TX
 			PIN_ESP32_RC_RX, // RX
 			UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)
@@ -128,7 +126,7 @@ void RCControllerTask::init(uint8_t deadZoneValue) {
 		return;
 	}
 
-	if(uart_driver_install(UART_NUM, BUFFER_SIZE*2, 0, 10, NULL, 0)!=ESP_OK) {
+	if(uart_driver_install(RC_UART_NUM, BUFFER_SIZE*2, 0, 10, NULL, 0)!=ESP_OK) {
 		ESP_LOGE(LOG_TAG, "RC Module UART driver install failed");
 		return;
 	}

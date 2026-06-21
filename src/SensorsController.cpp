@@ -21,8 +21,8 @@
 
 #include <math.h>
 
-#include "esp_log.h"
-static const char *LOG_TAG = "SENS";
+#include "rtank_esp_log.h"
+static const char *LOG_TAG = LOG_TAG_SENS;
 
 #include "driver/gpio.h"
 #include "driver/rmt_tx.h"

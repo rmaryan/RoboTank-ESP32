@@ -28,7 +28,7 @@
 #include "freertos/queue.h"
 #include "driver/rmt_tx.h"
 #include "driver/rmt_rx.h"
-#include "esp_log.h"
+#include "rtank_esp_log.h"
 
 struct SensorsStateStruct {
 	// Infrared obstacle sensors: forward-right, forward-left, down-right, down-left

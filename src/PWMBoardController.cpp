@@ -22,7 +22,7 @@
 #include <math.h>
 
 #include "driver/i2c.h"
-#include "esp_log.h"
+#include "rtank_esp_log.h"
 #include "pin_mapping.h"
 
 // Board-specific definitions
@@ -42,7 +42,7 @@
 // We hardcode 50 Hz - this is what works for the analog servos
 #define SERVOFREQ 50
 
-static const char* LOG_TAG = "PWM";
+static const char* LOG_TAG = LOG_TAG_PWM;
 
 SemaphoreHandle_t PWMBoardController::xPWMSemaphore;
 

@@ -21,7 +21,7 @@
 
 #include <string.h>
 
-static const char* LOG_TAG = "BLOG";
+static const char* LOG_TAG = LOG_TAG_BLOG;
 
 RingbufHandle_t BufLogger::buf_handle = NULL;
 vprintf_like_t BufLogger::original_vprintf = NULL;

@@ -21,22 +21,22 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_log.h"
+#include "rtank_esp_log.h"
 #include "pin_mapping.h"
 #include "driver/gpio.h"
 #include "RoboTankUtils.h"
 
-static const char* LOG_TAG = "SND";
+static const char* LOG_TAG = LOG_TAG_SND;
 
 void SoundModuleController::sendCommand(uint16_t command) {
 	//Start bit 0 level pulse.
 	gpio_set_level(PIN_ESP32_SOUND_P04_CLK, 0);
 	// Wait Start bit length minus 50 us
-	delayMicros(1950);
+	delay_mks(1950);
 	for (unsigned int mask = 0x8000; mask > 0; mask >>= 1) {
 		//Clock 0 level pulse.
 		gpio_set_level(PIN_ESP32_SOUND_P04_CLK, 0);
-		delayMicros(50);
+		delay_mks(50);
 		//Write data setup.
 		if (command & mask) {
 			gpio_set_level(PIN_ESP32_SOUND_P05_DI, 1);
@@ -44,24 +44,24 @@ void SoundModuleController::sendCommand(uint16_t command) {
 			gpio_set_level(PIN_ESP32_SOUND_P05_DI, 0);
 		}
 		//Write data hold.
-		delayMicros(50);
+		delay_mks(50);
 		//Clock 1 level pulse.
 		gpio_set_level(PIN_ESP32_SOUND_P04_CLK, 1);
-		delayMicros(100);
+		delay_mks(100);
 		// if (mask>0x0001){
 		// 	//Stop bit high level pulse.
 		// 	delayMicros(2000);
 		// }
 	}
 	//Busy active high from last data bit latch.
-	delayMicros(1900);
+	delay_mks(1900);
 }
 
 void SoundModuleController::reset() {
-	gpio_set_level(PIN_ESP32_SOUND_RESET, 0);
-	delayMicros(5000);
+	gpio_set_level(PIN_ESP32_SOUND_RESET, 0);	
+	delay_ms(5);
 	gpio_set_level(PIN_ESP32_SOUND_RESET, 1);
-	delayMicros(5000);
+	delay_ms(5);
 }
 
 void SoundModuleController::init() {
@@ -82,7 +82,7 @@ void SoundModuleController::init() {
 	gpio_set_level(PIN_ESP32_SOUND_P04_CLK, 1);
 	gpio_set_level(PIN_ESP32_SOUND_P05_DI, 1);
 	gpio_set_level(PIN_ESP32_SOUND_RESET, 1);
-	vTaskDelay(300 / portTICK_PERIOD_MS); // wait for the sound module to boot up
+	delay_ms(300); // wait for the sound module to boot up
 	reset();
 	SoundModuleController::setVolume(7);
 	ESP_LOGI(LOG_TAG, "Sound Module kicked-off");
@@ -91,7 +91,7 @@ void SoundModuleController::init() {
 void SoundModuleController::playSound(uint16_t trackID) {
 	if(trackID < 513) {		
 		reset();
-		delayMicros(500000);
+		delay_ms(500);
 		sendCommand(trackID);
 	} else {
 		ESP_LOGE(LOG_TAG, "Unknown track # %d", trackID);
