@@ -41,16 +41,18 @@ public:
 	 * num - pin #
 	 * on - moment to turn signal ON
 	 * off - moment to turn signal OFF
+	 * Returns: true if successful, false otherwise
 	 */
-	static void setPWM(uint8_t num, uint16_t on, uint16_t off);
+	static bool setPWM(uint8_t num, uint16_t on, uint16_t off);
 
 	/*
 	 * Turns the specified board pin ON or OFF
 	 * This method is using setPWM and thus is multithreading-safe.
 	 * num - pin #
 	 * ON - if true - turn on, else turn off
+	 * Returns: true if successful, false otherwise
 	 */
-	static void setPinON(uint8_t num, bool ON=true);
+	static bool setPinON(uint8_t num, bool ON=true);
 
 private:
 	// semaphore to safeguard the access to PWM board hardware access

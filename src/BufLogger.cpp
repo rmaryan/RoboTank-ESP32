@@ -56,10 +56,11 @@ char* BufLogger::pullLines() {
 		//Check received data
 		if (item != NULL) {
 			// allocate memory for the output string (+1 char for the trailing zero)
+			size_t raw_size = item_size;
 			item_size++;
 			linesBuffer = (char *) malloc(item_size);
-			memcpy(linesBuffer, item, item_size);
-			linesBuffer[item_size-1] = 0;
+			memcpy(linesBuffer, item, raw_size);
+			linesBuffer[raw_size] = 0;
 			//Return Item
 			vRingbufferReturnItem(buf_handle, (void *)item);
 
@@ -89,8 +90,14 @@ char* BufLogger::pullLines() {
 }
 
 int BufLogger::_log_vprintf(const char *fmt, va_list args) {
+	// 
+	va_list args_copy;
 	// Build the log line
-	int lineLength = vsnprintf (line_buffer, LINE_BUFF_SIZE, fmt, args);
+    va_copy(args_copy, args);
+    int lineLength = vsnprintf(line_buffer, LINE_BUFF_SIZE, fmt, args_copy);
+    va_end(args_copy);
+
+	if (lineLength >= LINE_BUFF_SIZE) lineLength = LINE_BUFF_SIZE - 1;
 	// Store the log line in the buffer
 	if(lineLength > 0) {
 		if( xSemaphoreTake(xBufferSemaphore, (TickType_t) 100) == pdTRUE ) {
@@ -118,7 +125,7 @@ int BufLogger::_log_vprintf(const char *fmt, va_list args) {
 
 		// Still feed the log lines to the default destination
 		// No need to parse the string again
-		return original_vprintf(line_buffer, va_list());
+		return original_vprintf(fmt, args);
 	} else {
 		return 0;
 	}

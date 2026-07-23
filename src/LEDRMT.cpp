@@ -25,6 +25,7 @@
 #include "driver/rmt_tx.h"
 #include "driver/rmt_types.h"
 #include "freertos/FreeRTOS.h"
+#include "RoboTankUtils.h"
 
 #define LED_STRIP_RMT_RES_HZ  (10 * 1000 * 1000) // 10MHz resolution
 #define LED_STRIP_RMT_MEM_BLOCK_SYMBOLS 64
@@ -39,7 +40,7 @@ static const char* LOG_TAG = LOG_TAG_LED;
 #define T1L_NS  450
 
 LEDRMT::LEDRMT(gpio_num_t gpio, uint32_t led_num)
-    : _gpio(gpio), _led_num(led_num), _buffer(nullptr), _initialized(false), _rmt_channel(nullptr){
+    : _gpio(gpio), _led_num(led_num),  _rmt_channel(nullptr), _buffer(nullptr), _initialized(false) {
 
     };
 
@@ -116,6 +117,7 @@ void LEDRMT::show() {
     };
     ESP_ERROR_CHECK(rmt_transmit(_rmt_channel, led_data_encoder, symbols, sizeof(symbols), &tx_cfg));    
     ESP_ERROR_CHECK(rmt_tx_wait_all_done(_rmt_channel, portMAX_DELAY));
+    delay_mks(60);
 }
 
 void LEDRMT::clear() {

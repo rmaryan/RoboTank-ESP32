@@ -23,6 +23,7 @@
 static const char* LOG_TAG = LOG_TAG_RC;
 
 #include "driver/uart.h"
+#include "esp_timer.h"
 #include "pin_mapping.h"
 #include "RoboTankUtils.h"
 
@@ -37,15 +38,25 @@ static const char* LOG_TAG = LOG_TAG_RC;
 uint8_t RCControllerTask::state;
 RCControllerTask::BUFFER_UNION RCControllerTask::buffer;
 uint8_t RCControllerTask::ptr;
-uint16_t RCControllerTask::channel[PROTOCOL_CHANNELS];
+volatile uint16_t RCControllerTask::channel[PROTOCOL_CHANNELS];
 uint16_t RCControllerTask::chksum;
 uint8_t RCControllerTask::deadZone;
+int64_t RCControllerTask::lastValidPacketTimeMs;
 TaskHandle_t RCControllerTask::handle = NULL;
 
 void RCControllerTask::taskFunction() {
 	while (1) {
 		size_t bufferLength = 0;
-		ESP_ERROR_CHECK(uart_get_buffered_data_len(RC_UART_NUM, &bufferLength));
+		esp_err_t ret = ESP_OK;
+		
+		ret = uart_get_buffered_data_len(RC_UART_NUM, &bufferLength);
+
+		if(ret != ESP_OK) {
+			// some glitch in the UART interface
+			ESP_LOGE(LOG_TAG, "RS UART failed");
+			vTaskDelay(1000 / portTICK_PERIOD_MS);
+			continue;
+		}
 		
 		if(bufferLength > 0) {
 			uint8_t value = 0;
@@ -96,6 +107,8 @@ void RCControllerTask::taskFunction() {
 }
 
 void RCControllerTask::init(uint8_t deadZoneValue) {
+	lastValidPacketTimeMs = 0;
+
 	// Set the dead zone value
 	deadZone = deadZoneValue;
 
@@ -118,7 +131,7 @@ void RCControllerTask::init(uint8_t deadZoneValue) {
 	}
 
 	if(uart_set_pin(RC_UART_NUM,
-			0, // TX
+			UART_PIN_NO_CHANGE, // TX - not used
 			PIN_ESP32_RC_RX, // RX
 			UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE)
 			!=ESP_OK) {
@@ -150,29 +163,44 @@ void RCControllerTask::processBuffer() {
 		for (uint8_t i = 0; i < PROTOCOL_CHANNELS; i++) {
 			channel[i] = buffer.words[i];
 		}
+		lastValidPacketTimeMs = esp_timer_get_time() / 1000;
+		// Ensure all writes to channel[] are visible before subsequent reads on other cores
+		__sync_synchronize();
 	}
 }
 
-uint16_t RCControllerTask::getChannelAnalogState(uint8_t channedID) {
-	if ((channedID < PROTOCOL_CHANNELS) && (state != STATE_DISCONNECTED)) {
-		if(channel[channedID] <= RC_CHANNEL_UP) {
+uint16_t RCControllerTask::getChannelAnalogState(uint8_t channelID) {
+	if ((channelID < PROTOCOL_CHANNELS) && (state != STATE_DISCONNECTED)) {
+
+		bool isDataRecent = (esp_timer_get_time()/1000 - lastValidPacketTimeMs) < RC_TIMEOUT_MS; 
+    	if (!isDataRecent) return SW_DISCONNECTED; 
+
+		uint16_t val = channel[channelID];
+		if(val <= RC_CHANNEL_UP) {
 			return RC_CHANNEL_UP;
-		} else if (channel[channedID] >= RC_CHANNEL_DOWN) {
+		} else if (val >= RC_CHANNEL_DOWN) {
 			return RC_CHANNEL_DOWN;
-		} else {
+		} else if((val > (RC_CHANNEL_MID - deadZone)) && (val < (RC_CHANNEL_MID + deadZone)))
+			return RC_CHANNEL_MID;
+		{
 			// return the channel value
-			return channel[channedID];
+			return val;
 		}
 	} else {
 		return 0;
 	}
 }
 
-uint8_t RCControllerTask::getChannelDiscreteState(uint8_t channedID){
-	if ((channedID < PROTOCOL_CHANNELS) && (state != STATE_DISCONNECTED)) {
-		if(channel[channedID] < (RC_CHANNEL_UP + RC_CHANNEL_HALF_STEP)) {
+uint8_t RCControllerTask::getChannelDiscreteState(uint8_t channelID){
+	if ((channelID < PROTOCOL_CHANNELS) && (state != STATE_DISCONNECTED)) {
+
+		bool isDataRecent = (esp_timer_get_time()/1000 - lastValidPacketTimeMs) < RC_TIMEOUT_MS; 
+    	if (!isDataRecent) return SW_DISCONNECTED; 
+
+		uint16_t val = channel[channelID];
+		if(val < (RC_CHANNEL_UP + RC_CHANNEL_HALF_STEP)) {
 			return SW_UP; // UP position
-		} else if (channel[channedID] > (RC_CHANNEL_DOWN - RC_CHANNEL_HALF_STEP)) {
+		} else if (val > (RC_CHANNEL_DOWN - RC_CHANNEL_HALF_STEP)) {
 			return SW_DOWN; // DOWN position
 		} else {
 			return SW_MID; // MID position

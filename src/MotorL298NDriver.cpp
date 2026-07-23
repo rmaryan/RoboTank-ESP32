@@ -50,6 +50,7 @@ void MotorL298NDriver::go(int16_t leftSpeed, int16_t rightSpeed) {
 	else if(abs(rightSpeed)<MIN_SPEED)
 		rightSpeed = 0;
 
+	bool ret = true;
 	if (leftSpeed != currentLeftSpeed) {
 		bool goLeftForward = true;
 		currentLeftSpeed = leftSpeed;
@@ -58,9 +59,10 @@ void MotorL298NDriver::go(int16_t leftSpeed, int16_t rightSpeed) {
 			leftSpeed = -leftSpeed;
 		}
 		ESP_LOGI(LOG_TAG, "Setting left speed to %d, forward: %d", leftSpeed, goLeftForward);
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN1, goLeftForward);
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN2, !goLeftForward);
-		PWMBoardController::setPWM(PIN_PWM_MOTOR_ENA, 0, leftSpeed);
+		// stop on any I2C/PWM error
+		ret = PWMBoardController::setPinON(PIN_PWM_MOTOR_IN1, goLeftForward);
+		ret= ret?PWMBoardController::setPinON(PIN_PWM_MOTOR_IN2, !goLeftForward):false;
+		ret= ret?PWMBoardController::setPWM(PIN_PWM_MOTOR_ENA, 0, leftSpeed):false;
 	}
 
 	if (rightSpeed != currentRightSpeed) {
@@ -71,8 +73,9 @@ void MotorL298NDriver::go(int16_t leftSpeed, int16_t rightSpeed) {
 			rightSpeed = -rightSpeed;
 		}
 		ESP_LOGI(LOG_TAG, "Setting right speed to %d, forward: %d", rightSpeed, goRightForward);
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN3, goRightForward);
-		PWMBoardController::setPinON(PIN_PWM_MOTOR_IN4, !goRightForward);
-		PWMBoardController::setPWM(PIN_PWM_MOTOR_ENB, 0, rightSpeed);
+		// stop on any I2C/PWM error
+		ret = PWMBoardController::setPinON(PIN_PWM_MOTOR_IN3, goRightForward);
+		ret= ret?PWMBoardController::setPinON(PIN_PWM_MOTOR_IN4, !goRightForward):false;
+		ret= ret?PWMBoardController::setPWM(PIN_PWM_MOTOR_ENB, 0, rightSpeed):false;
 	}
 }

@@ -57,7 +57,7 @@ void AITask::AItaskFunction()
 	// This method implements the RC flow chart as specified in the README.md
 	while (true)
 	{
-		#ifdef RC_DEBUG_ENABLED
+#ifdef RC_DEBUG_ENABLED
 		static uint32_t lastDebugTime = 0;
 		uint32_t currentTime = esp_timer_get_time() / 1000;
 		if (currentTime - lastDebugTime >= 1000)
@@ -75,8 +75,8 @@ void AITask::AItaskFunction()
 					 RCControllerTask::getChannelAnalogState(8),
 					 RCControllerTask::getChannelAnalogState(9));
 		}
-		#endif	
-		
+#endif
+
 		switch (ai_mode)
 		{
 
@@ -119,7 +119,7 @@ void AITask::AItaskFunction()
 			{
 				ai_mode = AI_STATE_PREHEAT;
 				// emergency stop the robot
-				MotorL298NDriver::go(0, 0); // stop the motors
+				MotorL298NDriver::go(0, 0);			 // stop the motors
 				SoundModuleController::playSound(2); // disarm sound
 				ESP_LOGI(LOG_TAG, "disarmed");
 				break;
@@ -178,15 +178,15 @@ void AITask::processTickRC()
 
 		if (leftSpeed > MOTOR_MAX_SPEED)
 		{
-			uint16_t delta = MOTOR_MAX_SPEED - leftSpeed;
-			leftSpeed -= delta;
-			rightSpeed += delta;
+			int16_t excess = leftSpeed - MOTOR_MAX_SPEED;
+			leftSpeed = MOTOR_MAX_SPEED;
+			rightSpeed -= excess;
 		}
 		else if (rightSpeed > MOTOR_MAX_SPEED)
 		{
-			uint16_t delta = MOTOR_MAX_SPEED - rightSpeed;
-			leftSpeed += delta;
-			rightSpeed -= delta;
+			int16_t excess = rightSpeed - MOTOR_MAX_SPEED;
+			rightSpeed = MOTOR_MAX_SPEED;
+			leftSpeed -= excess;
 		}
 		MotorL298NDriver::go(leftSpeed, rightSpeed);
 	}
@@ -221,13 +221,13 @@ void AITask::processTickRC()
 									 RCControllerTask::RC_LG_V)));
 
 	// Control the lights with the channel #5 switch (SWB)
-	if ((RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWB) == RCControllerTask::SW_MID) && (currentLightsMode !=2))
+	if ((RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWB) == RCControllerTask::SW_MID) && (currentLightsMode != 1))
 	{
 		LightsController::lightsON(LightsController::LIGHTS_BOTH);
 		LightsController::rgbOFF(LightsController::RGB_BOTH);
 		currentLightsMode = 1;
 	}
-	else if ((RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWB) == RCControllerTask::SW_UP) && (currentLightsMode != 1))
+	else if ((RCControllerTask::getChannelDiscreteState(RCControllerTask::RC_SWB) == RCControllerTask::SW_UP) && (currentLightsMode != 2))
 	{
 		LightsController::lightsON(LightsController::LIGHTS_BOTH);
 		LightsController::rgbSet(LightsController::RGB_BOTH,
@@ -262,7 +262,7 @@ void AITask::animateRGB()
 }
 
 int16_t AITask::calcServoSpeed(uint16_t channelState)
-{	
+{
 	// are we in dead zone?
 	if ((channelState > (RC_SERVO_MID - SERVO_DEAD_ZONE)) && (channelState < (RC_SERVO_MID + SERVO_DEAD_ZONE)))
 	{

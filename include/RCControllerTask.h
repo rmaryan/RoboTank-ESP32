@@ -33,6 +33,8 @@
 #define RC_CHANNEL_DOWN 2000
 #define RC_CHANNEL_HALF_STEP 250
 
+#define RC_TIMEOUT_MS 1000
+
 class RCControllerTask {
 private:
 	// Protocol parsing definitions
@@ -60,10 +62,13 @@ private:
 	static uint8_t state;
 	// protocol buffer, excludes the leading 0x20 and 0x10
 	static uint8_t ptr;
-	static uint16_t channel[PROTOCOL_CHANNELS];
+	static volatile uint16_t channel[PROTOCOL_CHANNELS];
 	static uint16_t chksum;
 
 	static uint8_t deadZone;
+
+	// time since robot received last valid packet from the RC
+	static int64_t lastValidPacketTimeMs;
 
 	// Reference to the task created
 	static TaskHandle_t handle;
@@ -105,12 +110,12 @@ public:
 
     // Get the current channel state
 	// Returns 0 on any error or disconnected state
-	static uint16_t getChannelAnalogState(uint8_t channedID);
+	static uint16_t getChannelAnalogState(uint8_t channelID);
 
 	// Get the switch position
 	// Returns SW_DISCONNECTED if the channel is not connected
 	// Returns SW_UP, SW_MID or SW_DOWN if the channel is connected
-	static uint8_t getChannelDiscreteState(uint8_t channedID);
+	static uint8_t getChannelDiscreteState(uint8_t channelID);
 
 };
 

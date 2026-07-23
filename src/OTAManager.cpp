@@ -85,6 +85,8 @@ httpd_uri_t OTAManager::http_logs_struct = { // @suppress("Invalid arguments")
 
 
 void OTAManager::init() {
+    TaskHandle_t handle = NULL;
+
 	//Initialize NVS
 	esp_err_t ret = nvs_flash_init();
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -95,8 +97,18 @@ void OTAManager::init() {
 
 	esp_log_level_set("wifi", ESP_LOG_NONE);     // disable wifi driver logging
 
+    // Initialize the event group
+	reboot_event_group = xEventGroupCreate();
+	// Clear the bit
+	xEventGroupClearBits(reboot_event_group, REBOOT_BIT);
+
 	// Need this task to spin up, see why in task
-	xTaskCreate(systemRebootWrapper, REBOOT_TASK_NAME, TASK_STACK_SIZE, NULL, REBOOT_TASK_PRIORITY, NULL);
+	xTaskCreate(systemRebootWrapper, REBOOT_TASK_NAME, TASK_STACK_SIZE, NULL, REBOOT_TASK_PRIORITY, &handle);
+
+	if(handle == NULL ) {
+		ESP_LOGE(LOG_TAG, "OTA task creation failed");
+		return;
+	}
 
 	// Initialize the WiFi connection and HTTP server
 	server = NULL;
@@ -107,13 +119,6 @@ void OTAManager::init() {
 
 void OTAManager::systemRebootTaskFunction()
 {
-	// Initialize the event group
-	reboot_event_group = xEventGroupCreate();
-
-	// Clear the bit
-	xEventGroupClearBits(reboot_event_group, REBOOT_BIT);
-
-
 	for (;;)
 	{
 		// Wait here until the bit gets set for reboot
@@ -142,6 +147,10 @@ void OTAManager::initWiFiStation() {
 
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
 	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+
+    // make sure the ssid/sspwd are not too long
+	_Static_assert(sizeof(CONFIG_STATION_SSID) <= sizeof(((wifi_config_t*)0)->sta.ssid), "SSID is too long");
+    _Static_assert(sizeof(CONFIG_STATION_PASSPHRASE) <= sizeof(((wifi_config_t*)0)->sta.password), "WIFI password is too long");
 
 	wifi_config_t wifi_config = {};
 	memcpy ( wifi_config.sta.ssid, CONFIG_STATION_SSID, sizeof(CONFIG_STATION_SSID) );
@@ -173,7 +182,7 @@ void OTAManager::wifi_event_handler(void *arg, esp_event_base_t event_base,
 				ESP_LOGI(LOG_TAG, "Trying to reconnect...");
 			} else {
 				ESP_LOGE(LOG_TAG, "STA Connection Failed");
-				/* Stop the web server */
+				/* Stop the web server, continue working in offline mode untill the next restart */
 				httpStopServer();
 			}
 			break;
@@ -238,7 +247,7 @@ esp_err_t OTAManager::http_update_status_handler(httpd_req_t *req) {
 
 	char ledJSON[100];
 
-	sprintf(ledJSON, "{\"status\":%d,\"compile_time\":\"%s\",\"compile_date\":\"%s\"}", flash_status, __TIME__, __DATE__);
+	snprintf(ledJSON, 100, "{\"status\":%d,\"compile_time\":\"%s\",\"compile_date\":\"%s\"}", flash_status, __TIME__, __DATE__);
 	httpd_resp_set_type(req, "application/json");
 	httpd_resp_send(req, ledJSON, strlen(ledJSON));
 
@@ -256,7 +265,7 @@ esp_err_t OTAManager::http_update_status_handler(httpd_req_t *req) {
 esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 	esp_ota_handle_t ota_handle;
 
-	char ota_buff[1024];
+	char ota_buff[1025];
 	int content_length = req->content_len;
 	int content_received = 0;
 	int recv_len;
@@ -270,7 +279,8 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 
 	do {
 		/* Read the data for the request */
-		if ((recv_len = httpd_req_recv(req, ota_buff, MIN(content_length, sizeof(ota_buff)))) < 0) {
+		recv_len = httpd_req_recv(req, ota_buff, MIN(content_length, (int)sizeof(ota_buff) - 1));
+		if (recv_len < 0) {
 			if (recv_len == HTTPD_SOCK_ERR_TIMEOUT) {
 				/* Retry receiving if timeout occurred */
 				continue;
@@ -285,7 +295,13 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 			is_req_body_started = true;
 
 			// Lets find out where the actual data starts after the header info
-			char *body_start_p = strstr(ota_buff, "\r\n\r\n") + 4;
+			ota_buff[recv_len] = 0;
+			char *body_start_p = strstr(ota_buff, "\r\n\r\n");
+			if (body_start_p == NULL) {
+    			ESP_LOGE(LOG_TAG, "Header boundary not found");
+    			return ESP_FAIL;
+			}
+			body_start_p += 4;
 			int body_part_len = recv_len - (body_start_p - ota_buff);
 
 			esp_err_t err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_handle);
@@ -300,6 +316,7 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 
 			// Lets write this first part of data out
 			esp_ota_write(ota_handle, body_start_p, body_part_len);
+			content_received += body_part_len;
 		} else {
 			ESP_LOGI(LOG_TAG, "HTTP POST Writing OTA data");
 			esp_ota_write(ota_handle, ota_buff, recv_len);
@@ -315,6 +332,7 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 			// Webpage will request status when complete
 			// This is to let it know it was successful
 			flash_status = 1;
+			ESP_LOGI(LOG_TAG, "HTTP POST flashing succeeded");
 		} else {
 			ESP_LOGE(LOG_TAG, "HTTP POST Set boot partition error");
 		}
@@ -322,7 +340,6 @@ esp_err_t OTAManager::http_update_post_handler(httpd_req_t *req) {
 	} else {
 		ESP_LOGE(LOG_TAG, "HTTP POST OTA End Error");
 	}
-	ESP_LOGI(LOG_TAG, "HTTP POST flashing succeeded");
 	return ESP_OK;
 }
 

@@ -94,7 +94,9 @@ void ArmController::turnServo(uint8_t servoID, int16_t turningAngleDEG) {
 
 void ArmController::parkArm() {
 	for(int8_t i = (SERVOS_COUNT-1); i>=0; i--) {
-		setServo(i, SERVO_PARK_DEG[i]);
+		if (SERVO_PARK_DEG[i] != 255) {
+            setServo(i, SERVO_PARK_DEG[i]);
+        }
 	}
 }
 
@@ -124,7 +126,7 @@ void ArmController::servoTimerCallback(TimerHandle_t pxTimer) {
 			if((servo_current_speed[servoID]>0)!=positiveDirection) {
 				// stop the movement and wait for one cycle
 				servo_current_speed[servoID] = 0;
-				ESP_LOGI(LOG_TAG, "CALLBACK REDIRECT %d c=%d t=%d", servoID, servo_current_position[servoID], servo_target_position[servoID]);
+				// ESP_LOGI(LOG_TAG, "CALLBACK REDIRECT %d c=%d t=%d", servoID, servo_current_position[servoID], servo_target_position[servoID]);
 				continue;
 			}
 		}
@@ -132,10 +134,6 @@ void ArmController::servoTimerCallback(TimerHandle_t pxTimer) {
 		// being here means the servo either does not move, or moves to the expected direction
 		uint16_t absDistance = abs(servo_target_position[servoID] - servo_current_position[servoID]);
 		uint16_t absSpeed = abs(servo_current_speed[servoID]);
-
-		if(servoID == 1) {
-			ESP_LOGI(LOG_TAG, "CALLBACK %d c=%d t=%d ad=%d as=%d", servoID, servo_current_position[servoID], servo_target_position[servoID], absDistance, absSpeed);
-		}
 
 		// Can we reach the destination within one tick?
 		if(absDistance <= SERVO_SPEED_MIN) {
@@ -173,7 +171,7 @@ void ArmController::servoCalibration() {
 	char buffer[BUFF_SIZE+1] = "1234";
 	uint8_t buffLen = 0;
 
-	vTaskDelay(2000 / portTICK_RATE_MS);
+	vTaskDelay(2000 / portTICK_PERIOD_MS);
 
 	printf("Submit commands in format: SDDD, where S - servo ID (0-8) DDD - position in degree\n");
 
@@ -185,7 +183,7 @@ void ArmController::servoCalibration() {
 			ch = getchar();
 			if (ch == EOF) {
 				// wait a bit for the characters to be available
-				vTaskDelay(200 / portTICK_RATE_MS);
+				vTaskDelay(200 / portTICK_PERIOD_MS);
 			} else
 				if (ch == '\n') {
 					// this is an end of line character - process the command

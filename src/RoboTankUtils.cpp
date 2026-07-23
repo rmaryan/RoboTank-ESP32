@@ -20,36 +20,33 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_timer.h"
+#include "esp_rom_sys.h"
 #include "rtank_esp_log.h"
 
-#define NOP() asm volatile ("nop")
+#define NOP() asm volatile("nop")
 
 // Maps a number from one range to another
-long map(long x, long in_min, long in_max, long out_min, long out_max) {
-	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+long map(long x, long in_min, long in_max, long out_min, long out_max)
+{
+    if (in_max == in_min)
+        return 0;
+    else
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 // Delays for a specified number of milliseconds
-void delay_ms(uint32_t ms) {
-    if (ms != 0) {
+void delay_ms(uint32_t ms)
+{
+    if (ms != 0)
+    {
         vTaskDelay(ms / portTICK_PERIOD_MS);
     }
 }
 
 // Delays for a specified number of microseconds
-void delay_mks(uint32_t us) {
-    if(us){
-		uint64_t m = esp_timer_get_time();
-		uint64_t e = (m + us);
-        if(m > e){ //overflow
-            while(esp_timer_get_time() > e){
-                NOP();
-            }
-        }
-        while(esp_timer_get_time() < e){
-            NOP();
-        }
-    }
+void delay_mks(uint32_t us)
+{
+    esp_rom_delay_us(us);
 }
 
 // Initialize the logging subsystem with default log levels

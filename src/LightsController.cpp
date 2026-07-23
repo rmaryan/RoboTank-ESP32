@@ -70,16 +70,16 @@ void LightsController::rgbSet(RGBLightsSide side, uint8_t r, uint8_t g,
 	{
 		for (int i = 0; i < LED_COUNT; i++)
 		{
-			stripRGBLeft.setPixel(i, r, g, b);
-			stripRGBLeft.show();
+			stripRGBLeft.setPixel(i, r, g, b);			
 		}
+		stripRGBLeft.show();
 	}
 	if ((side == RGB_RIGHT) || (side == RGB_BOTH))
 	{
 		for (int i = 0; i < LED_COUNT; i++)
 		{
-			stripRGBRight.setPixel(i, r, g, b);
-			stripRGBRight.show();
+			stripRGBRight.setPixel(i, r, g, b);			
 		}
+		stripRGBRight.show();
 	}
 }

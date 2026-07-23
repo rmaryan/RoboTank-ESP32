@@ -1,0 +1,36 @@
+# Cline ignore file - patterns for files/directories Cline should skip
+# Based on RoboTank-ESP32 project structure
+
+## Build artifacts and PlatformIO outputs
+.platformio/
+*.o
+*.d
+*/build/
+
+## Binary and compiled files
+*.bin
+*.elf
+*.map
+*.a
+*.lib
+
+## SD card data files (binary data, not relevant to code development)
+sdcard/*.AD4
+
+## Schematics media files (large images, PDFs)
+schematics/*.png
+schematics/*.jpg
+schematics/*.drawio
+schematics/3D Models/*
+schematics/RoboTank-ESP32/*
+
+## Memory bank directory (managed internally by Cline)
+memory-bank/
+
+## Git related (already tracked by git)
+.git/
+.gitmodules
+
+## IDE specific artifacts
+.vscode/!.vscodeignore
+.vscode/*.json

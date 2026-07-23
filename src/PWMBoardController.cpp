@@ -22,31 +22,33 @@
 #include <math.h>
 
 #include "driver/i2c.h"
+#include "esp_check.h"
 #include "rtank_esp_log.h"
 #include "pin_mapping.h"
 
 // Board-specific definitions
-#define I2C_CLK_SPEED 100000 /* I2C clock speed in Hz */
-#define PCA9685_I2C_ADDRESS 0x40      /* Default PCA9685 I2C Slave Address */
+#define I2C_CLK_SPEED 100000		  /* I2C clock speed in Hz */
+#define PCA9685_I2C_ADDRESS 0x40	  /* Default PCA9685 I2C Slave Address */
 #define FREQUENCY_OSCILLATOR 25000000 /* Int. osc. frequency in datasheet */
-#define PCA9685_PRESCALE 0xFE     /* Prescaler for PWM output frequency */
-#define PCA9685_MODE1 0x00      /* Mode Register 1 */
-#define MODE1_RESTART 0x80 /* Restart enabled */
-#define MODE1_SLEEP 0x10   /* Low power mode. Oscillator off */
-#define MODE1_AI 0x20      /* Auto-Increment enabled */
-#define PCA9685_PRESCALE_MIN 3   /* minimum prescale value */
-#define PCA9685_PRESCALE_MAX 255 /* maximum prescale value */
-#define ACK_CHECK_EN 0x1 /* Check for ACK on I2C bus*/
-#define PCA9685_LED0_ON_L 0x06  /* LED0 on tick, low byte*/
+#define PCA9685_PRESCALE 0xFE		  /* Prescaler for PWM output frequency */
+#define PCA9685_MODE1 0x00			  /* Mode Register 1 */
+#define MODE1_RESTART 0x80			  /* Restart enabled */
+#define MODE1_SLEEP 0x10			  /* Low power mode. Oscillator off */
+#define MODE1_AI 0x20				  /* Auto-Increment enabled */
+#define PCA9685_PRESCALE_MIN 3		  /* minimum prescale value */
+#define PCA9685_PRESCALE_MAX 255	  /* maximum prescale value */
+#define ACK_CHECK_EN 0x1			  /* Check for ACK on I2C bus*/
+#define PCA9685_LED0_ON_L 0x06		  /* LED0 on tick, low byte*/
 
 // We hardcode 50 Hz - this is what works for the analog servos
 #define SERVOFREQ 50
 
-static const char* LOG_TAG = LOG_TAG_PWM;
+static const char *LOG_TAG = LOG_TAG_PWM;
 
 SemaphoreHandle_t PWMBoardController::xPWMSemaphore;
 
-void PWMBoardController::init() {
+void PWMBoardController::init()
+{
 	// set up the I2C interface
 	ESP_LOGI(LOG_TAG, "Initializing the PWM Board Controller...");
 
@@ -61,8 +63,6 @@ void PWMBoardController::init() {
 	ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &conf));
 	ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, conf.mode, 0, 0, 0));
 
-	esp_err_t error_code;
-
 	// reset the PWM board
 	ESP_ERROR_CHECK(sendPWMData(PCA9685_MODE1, MODE1_RESTART));
 
@@ -73,26 +73,28 @@ void PWMBoardController::init() {
 	if (prescaleval > PCA9685_PRESCALE_MAX)
 		prescaleval = PCA9685_PRESCALE_MAX;
 	uint8_t prescale = round(prescaleval);
-	
+
 	uint8_t oldmode = receivePWMData(PCA9685_MODE1);
 	uint8_t newmode = (oldmode & ~MODE1_RESTART) | MODE1_SLEEP; // sleep
-	ESP_ERROR_CHECK(sendPWMData(PCA9685_MODE1, newmode));                     // go to sleep
-	ESP_ERROR_CHECK(sendPWMData(PCA9685_PRESCALE, prescale)); // set the prescaler
+	ESP_ERROR_CHECK(sendPWMData(PCA9685_MODE1, newmode));		// go to sleep
+	ESP_ERROR_CHECK(sendPWMData(PCA9685_PRESCALE, prescale));	// set the prescaler
 	ESP_ERROR_CHECK(sendPWMData(PCA9685_MODE1, oldmode));
-	vTaskDelay(5/portTICK_PERIOD_MS);
+	vTaskDelay(5 / portTICK_PERIOD_MS);
 	ESP_ERROR_CHECK(sendPWMData(PCA9685_MODE1, oldmode | MODE1_RESTART | MODE1_AI));
-	vTaskDelay(10/portTICK_PERIOD_MS);
+	vTaskDelay(10 / portTICK_PERIOD_MS);
 
 	// Create the access safeguard mutex
 	xPWMSemaphore = xSemaphoreCreateMutex();
-	if(xPWMSemaphore == NULL) {
+	if (xPWMSemaphore == NULL)
+	{
 		ESP_LOGE(LOG_TAG, "Semaphore creation failed");
 	}
 
 	ESP_LOGI(LOG_TAG, "PWM Board Controller initiated");
 }
 
-esp_err_t PWMBoardController::sendPWMData(uint8_t addr, uint8_t data) {
+esp_err_t PWMBoardController::sendPWMData(uint8_t addr, uint8_t data)
+{
 	esp_err_t error_code;
 	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 	i2c_master_start(cmd);
@@ -100,48 +102,78 @@ esp_err_t PWMBoardController::sendPWMData(uint8_t addr, uint8_t data) {
 	i2c_master_write_byte(cmd, addr, ACK_CHECK_EN);
 	i2c_master_write_byte(cmd, data, ACK_CHECK_EN); // potentially for the registers should be NACK_VAL
 	i2c_master_stop(cmd);
-	error_code = i2c_master_cmd_begin(I2C_NUM_0, cmd, 100/portTICK_PERIOD_MS);
+	error_code = i2c_master_cmd_begin(I2C_NUM_0, cmd, 100 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
 	return error_code;
 }
 
-void PWMBoardController::setPWM(uint8_t num, uint16_t on, uint16_t off) {
-	if( xSemaphoreTake(xPWMSemaphore, (TickType_t) 2) == pdTRUE ) {
-		i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-		i2c_master_start(cmd);
-		i2c_master_write_byte(cmd, (PCA9685_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
-		i2c_master_write_byte(cmd, PCA9685_LED0_ON_L + 4 * num, ACK_CHECK_EN);
-		i2c_master_write_byte(cmd, on, ACK_CHECK_EN);
-		i2c_master_write_byte(cmd, on >> 8, ACK_CHECK_EN);
-		i2c_master_write_byte(cmd, off, ACK_CHECK_EN);
-		i2c_master_write_byte(cmd, off >> 8, ACK_CHECK_EN);
-		i2c_master_stop(cmd);
-		i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
-		i2c_cmd_link_delete(cmd);
-		xSemaphoreGive(xPWMSemaphore);
-	} else {
+bool PWMBoardController::setPWM(uint8_t num, uint16_t on, uint16_t off)
+{
+	if (xSemaphoreTake(xPWMSemaphore, (TickType_t)400) != pdTRUE)
+	{
 		ESP_LOGE(LOG_TAG, "Semaphore timeout. PWM command was lost.");
+		return false;
 	}
+
+	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+	if (cmd == NULL)
+	{
+		xSemaphoreGive(xPWMSemaphore);
+		return false;
+	}
+	esp_err_t ret = ESP_OK;
+	uint8_t data[5] = {
+		(uint8_t)(PCA9685_LED0_ON_L + 4 * num),
+		(uint8_t)(on & 0xFF),
+		(uint8_t)((on >> 8) & 0xFF),
+		(uint8_t)(off & 0xFF),
+		(uint8_t)((off >> 8) & 0xFF)};
+
+	ESP_GOTO_ON_ERROR(i2c_master_start(cmd), err, LOG_TAG, "Failed to set PWM on channel %d: error code 0x%x", num, ret);
+	ESP_GOTO_ON_ERROR(i2c_master_write_byte(cmd, (PCA9685_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN), err, LOG_TAG, "Failed to set PWM on channel %d: error code 0x%x", num, ret);
+	ESP_GOTO_ON_ERROR(i2c_master_write(cmd, data, sizeof(data), ACK_CHECK_EN), err, LOG_TAG, "Failed to set PWM on channel %d: error code 0x%x", num, ret);
+	ESP_GOTO_ON_ERROR(i2c_master_stop(cmd), err, LOG_TAG, "Failed to set PWM on channel %d: error code 0x%x", num, ret);
+	ESP_GOTO_ON_ERROR(i2c_master_cmd_begin(I2C_NUM_0, cmd, 10 / portTICK_PERIOD_MS), err, LOG_TAG, "Failed to set PWM on channel %d: error code 0x%x", num, ret);
+
+err:
+	i2c_cmd_link_delete(cmd);
+	xSemaphoreGive(xPWMSemaphore);
+
+	return (ret == ESP_OK);
 }
 
-uint8_t PWMBoardController::receivePWMData(uint8_t addr) {
+uint8_t PWMBoardController::receivePWMData(uint8_t addr)
+{
 	uint8_t data = 0;
 
 	i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+	// set the reading address
+	i2c_master_start(cmd);
+	i2c_master_write_byte(cmd, (PCA9685_I2C_ADDRESS << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
+	i2c_master_write_byte(cmd, addr, ACK_CHECK_EN);
+
+	// repeated start + read data
 	i2c_master_start(cmd);
 	i2c_master_write_byte(cmd, (PCA9685_I2C_ADDRESS << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
 	i2c_master_read_byte(cmd, &data, I2C_MASTER_NACK);
+
 	i2c_master_stop(cmd);
-	i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
+	i2c_master_cmd_begin(I2C_NUM_0, cmd, 10 / portTICK_PERIOD_MS);
 	i2c_cmd_link_delete(cmd);
+
 	return data;
 }
 
-void PWMBoardController::setPinON(uint8_t num, bool ON) {
+bool PWMBoardController::setPinON(uint8_t num, bool ON)
+{
 	// these are the magic combinations
-	if(ON) {
-		setPWM(num, 4096, 0);
-	} else {
-		setPWM(num, 0, 4096);
+	if (ON)
+	{
+		return setPWM(num, 4096, 0);
+	}
+	else
+	{
+		return setPWM(num, 0, 4096);
 	}
 }
